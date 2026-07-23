@@ -6,6 +6,7 @@ import type { ScreenPhase } from "./lifecycle";
 import type { ScreenActions } from "./useScreenPhase";
 import { InMatchScreen } from "./InMatchScreen";
 import { MatchmakingScreen } from "./MatchmakingScreen";
+import { ResultScreen } from "./ResultScreen";
 
 /** 画面から発火するマッチング関連の送信。実体は App が connection.send で配線する。 */
 export interface MatchmakingNet {
@@ -80,34 +81,16 @@ export function ScreenRouter({
       );
 
     case "result":
+      if (!state.gameOver) return <Placeholder title="リザルト">—</Placeholder>;
       return (
-        <Placeholder title="リザルト">
-          <p className="text-slate-300">
-            {state.gameOver
-              ? state.gameOver.rank === 1
-                ? "優勝！"
-                : `脱落（${state.gameOver.rank}位）`
-              : "—"}
-          </p>
-          <p className="text-xs text-slate-500">（画面本体は #13 で実装）</p>
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={() => {
-                actions.rematch();
-                net.join();
-              }}
-              className="rounded bg-emerald-600 px-4 py-2 font-bold hover:bg-emerald-500"
-            >
-              再マッチング
-            </button>
-            <button
-              onClick={actions.backToTitle}
-              className="rounded bg-slate-600 px-4 py-2 hover:bg-slate-500"
-            >
-              タイトルへ
-            </button>
-          </div>
-        </Placeholder>
+        <ResultScreen
+          result={state.gameOver}
+          onRematch={() => {
+            actions.rematch();
+            net.join();
+          }}
+          onBackToTitle={actions.backToTitle}
+        />
       );
   }
 }

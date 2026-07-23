@@ -13,3 +13,4 @@ export {
 export { ScreenRouter, type MatchmakingNet } from "./ScreenRouter";
 export { InMatchScreen } from "./InMatchScreen";
 export { MatchmakingScreen } from "./MatchmakingScreen";
+export { ResultScreen } from "./ResultScreen";
