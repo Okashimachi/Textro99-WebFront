@@ -37,3 +37,4 @@ docs/worklog/log-NNN-{短いkebab-caseの主題}/
 | # | タスク | 状態 | 日付 |
 |---|---|---|---|
 | [001](./log-001-proto-vendoring/README.md) | proto の TS 型取り込み（手コピー方式） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [012](./log-012-blocked-issues/README.md) | ブロック中 Issue の記録（#8 TypingJudge / #14 デプロイ） | ⏸ 保留 | 2026-07-23 |
