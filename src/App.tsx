@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { WsConnection } from "@/net";
 import { useGameState } from "@/state";
+import { ScreenRouter, useScreenPhase } from "@/screens";
 import { RawStateDebugPane } from "@/components/RawStateDebugPane";
 import { MOCK_SEQUENCE } from "@/dev/mockMessages";
 
@@ -10,6 +11,7 @@ export function App() {
   // 接続は生成のみ（自動接続はしない）。実サーバ疎通は統合フェーズで有効化する。
   const connection = useMemo(() => new WsConnection({ autoReconnect: false }), []);
   const { state, lastEnvelope } = useGameState(connection);
+  const { phase, actions } = useScreenPhase(state);
   const [step, setStep] = useState(0);
 
   return (
@@ -17,10 +19,14 @@ export function App() {
       <header className="border-b border-slate-700 px-4 py-3">
         <h1 className="text-lg font-bold">テキストロ99 — Web テストフロント</h1>
         <p className="text-xs text-slate-400">
-          接続状態: {connection.status} / 自分: {state.selfPlayerId ?? "—"} / 生存:{" "}
-          {state.aliveCount}
+          画面: {phase} / 接続状態: {connection.status} / 自分:{" "}
+          {state.selfPlayerId ?? "—"} / 生存: {state.aliveCount}
         </p>
       </header>
+
+      <main className="px-4">
+        <ScreenRouter phase={phase} state={state} actions={actions} />
+      </main>
 
       {/* dev モックハーネス：サーバー無しで reducer/表示を検証する（docs/rules/02 §2 の切り分け目的） */}
       <section className="p-4">

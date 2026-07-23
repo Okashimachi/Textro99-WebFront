@@ -41,3 +41,4 @@ docs/worklog/log-NNN-{短いkebab-caseの主題}/
 | [003](./log-003-ws-dispatch/README.md) | WebSocket接続・メッセージディスパッチ層（#4） | ✅ 完了（PR待ち） | 2026-07-23 |
 | [004](./log-004-state-reducer/README.md) | 受信stateのreducer/ViewModel（#5） | ✅ 完了（PR待ち） | 2026-07-23 |
 | [005](./log-005-debug-pane/README.md) | RawStateDebugPane＋devモック（#6） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [006](./log-006-lifecycle/README.md) | 画面ライフサイクル状態機械（#9） | ✅ 完了（PR待ち） | 2026-07-23 |
