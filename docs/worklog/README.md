@@ -38,3 +38,4 @@ docs/worklog/log-NNN-{短いkebab-caseの主題}/
 |---|---|---|---|
 | [001](./log-001-proto-vendoring/README.md) | proto の TS 型取り込み（手コピー方式） | ✅ 完了（PR待ち） | 2026-07-23 |
 | [002](./log-002-webfront-scaffold/README.md) | Vite+React+TS+Tailwind 基盤スキャフォールド（#3） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [003](./log-003-ws-dispatch/README.md) | WebSocket接続・メッセージディスパッチ層（#4） | ✅ 完了（PR待ち） | 2026-07-23 |
