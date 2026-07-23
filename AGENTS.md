@@ -47,10 +47,10 @@
 
 ## 3. 作業ログ（docs/worklog/）
 
-指示・AIの判断と決定・テスト仕様/結果・トークン消費を **1タスク＝1ファイル**で残す。詳細は [docs/worklog/README.md](./docs/worklog/README.md)。
+指示・AIの判断と決定・テスト仕様/結果・トークン消費を **1タスク＝1ディレクトリ**で残す（関心事ごとにファイル分割）。詳細は [docs/worklog/README.md](./docs/worklog/README.md)。
 
-- タスク着手時に [docs/worklog/_template.md](./docs/worklog/_template.md) をコピーし、`log-NNN-{主題}.md`（3桁連番・欠番なし）で起票する。
-- 完了時に **AIの判断と決定 / テスト結果 / トークン消費** を必ず埋め、README の索引に1行追加する。
+- タスク着手時に [docs/worklog/_template/](./docs/worklog/_template/) をコピーし、`log-NNN-{主題}/`（3桁連番・欠番なし）で起票する。
+- 完了時に **03-判断と決定 / 06-テスト結果 / 07-トークン消費** を必ず埋め、README の索引に1行追加する。
 
 ---
 
