@@ -4,14 +4,25 @@
 import type { GameViewModel } from "@/state";
 import type { ScreenPhase } from "./lifecycle";
 import type { ScreenActions } from "./useScreenPhase";
+import { InMatchScreen } from "./InMatchScreen";
 
 interface Props {
   phase: ScreenPhase;
   state: GameViewModel;
   actions: ScreenActions;
+  /** 入力送信層(#7)の選択中戦略。 */
+  selectedStrategyId?: number | null;
+  /** 打鍵途中経過（#8 予定・表示専用）。 */
+  typedPrefix?: string;
 }
 
-export function ScreenRouter({ phase, state, actions }: Props) {
+export function ScreenRouter({
+  phase,
+  state,
+  actions,
+  selectedStrategyId = null,
+  typedPrefix,
+}: Props) {
   switch (phase) {
     case "title":
       return (
@@ -38,20 +49,21 @@ export function ScreenRouter({ phase, state, actions }: Props) {
 
     case "inMatch":
       return (
-        <Placeholder title="試合中">
-          <p className="text-slate-300">生存 {state.aliveCount} / 99</p>
-          <p className="text-xs text-slate-500">（HUD は #11 / グリッドは #12 で実装）</p>
-        </Placeholder>
+        <InMatchScreen
+          state={state}
+          selectedStrategyId={selectedStrategyId}
+          typedPrefix={typedPrefix}
+        />
       );
 
     case "spectating":
       return (
-        <Placeholder title="観戦（脱落済み）">
-          <p className="text-slate-300">
-            あなたは脱落しました。試合終了まで観戦します（自操作は無効）。
-          </p>
-          <p className="text-slate-300">生存 {state.aliveCount} / 99</p>
-        </Placeholder>
+        <InMatchScreen
+          state={state}
+          selectedStrategyId={selectedStrategyId}
+          typedPrefix={typedPrefix}
+          spectating
+        />
       );
 
     case "result":

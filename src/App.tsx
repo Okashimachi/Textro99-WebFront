@@ -44,7 +44,13 @@ export function App() {
       </header>
 
       <main className="px-4">
-        <ScreenRouter phase={phase} state={state} actions={actions} />
+        <ScreenRouter
+          phase={phase}
+          state={state}
+          actions={actions}
+          selectedStrategyId={selectedStrategyId}
+          typedPrefix={lastChar ?? ""}
+        />
       </main>
 
       {/* dev: 入力送信層の可視化（#7 検証用）。inMatch のとき Enter/0-9/文字キーを試せる */}
