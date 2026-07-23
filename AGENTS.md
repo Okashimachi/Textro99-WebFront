@@ -1,65 +1,39 @@
 # AGENTS.md — textro99-web
 
-このファイルは、AIコーディングエージェント（Claude Code / Codex / Cursor 等）が **textro99-web**（Webテストフロント実装リポジトリ）で作業する際に毎セッション最初に読むインデックス。ツールに依存しない共通の入口として、ここに一本化する。
+AIエージェント（Claude Code / Codex / Cursor 等）が毎セッション最初に読む索引。**ルール本体は [`docs/rules/`](./docs/rules/) に分冊**。該当作業の前に必ず読むこと。
 
-> Claude Code は `CLAUDE.md` からこのファイルを参照している。どのAIツールを使っても、実体はこの `AGENTS.md` を読むこと。
-> **このファイルは索引と最小限の説明だけを持つ。具体的なルール本体は [`docs/rules/`](./docs/rules/) に分冊している。作業前に該当ルールを必ず読むこと。**
+## このリポジトリは何か
 
----
+「テキストロ99」（99人タイピングバトロワ）の **Webテストフロント（React + TS + Vite + Tailwind）**。サーバー（Go）を検証する開発期間中の主力テストハーネスで、本番は Unity（このリポは本番ではない）。接続・プロトコル層は **Unity 流用の参照実装**を兼ねる。コードは AI 生成前提。
 
-## 0. このリポジトリは何か（30秒サマリ）
+> ⚠️ プロダクト名は `textro99`。旧称 `sushida99` が残る箇所があるが使わない。リネーム禁止。
 
-「テキストロ99」（99人バトルロイヤル型タイピングゲーム）の **Webテストフロント（React + TS + Vite + Tailwind）の実装リポジトリ**。
+## 上流リポジトリ（正典。矛盾したら上流優先・こちらを直す）
 
-- **役割は「開発期間中の主力テストハーネス」**。サーバー（Go）の戦闘ロジック＋通信を検証する。本番は Unity/unityroom であり、**このリポジトリは本番ではない**（ただしデプロイして複数人テストに使う）。
-- **開発の起点**：まず Web で「遊べて・複数人でテストできる状態」を最速で作り、Unity は後からこのフロントの接続・プロトコル層を流用して追随する。このフロントの接続・プロトコル層は **Unity 流用の参照実装** を兼ねる。
-- **フロントのコードは AI に書かせる前提**。
+| リポジトリ | 役割 |
+|---|---|
+| [Textro99-Proto](https://github.com/Okashimachi/Textro99-Proto) | 共有契約（DTO/メッセージ/スキーマ/ローマ字）。**契約は変更しない**（Proto で人間承認） |
+| [Textro99-Client-Docs](https://github.com/Okashimachi/Textro99-Client-Docs) | Web/Unity 共通クライアント設計。Web はこれをミラー実装 |
+| [Textro99-Docs](https://github.com/Okashimachi/Textro99-Docs) | 企画・ゲーム/サーバー仕様。本リポ仕様は `04_クライアント仕様/02_Webフロント仕様.md` |
+| [用語集](https://github.com/Okashimachi/Textro99-Docs/blob/main/01_企画/00_用語集.md) | 日本語↔コード名の正典。**変数/型/関数名はここに合わせる**（`Daken`/`Combo`/`TypingJudge` 等） |
 
-> ⚠️ プロダクト名は `textro99`。設計ドキュメントに旧称 `sushida99` 表記が残る箇所があるが、ここでは `textro99` を使う。勝手にリネームしない。
+## ルール本体（docs/rules/）
 
----
-
-## 1. 上流リポジトリへの参照（正典の所在）
-
-このリポジトリの実装は、以下を上流（正典）として前提にする。**矛盾したら上流が優先し、こちらを直す。**
-
-| リポジトリ | 役割 | 関係 |
+| # | ファイル | いつ読むか |
 |---|---|---|
-| **[Textro99-Proto](https://github.com/Okashimachi/Textro99-Proto)** | 全リポジトリ唯一の共有契約（DTO/メッセージ/GameParameters スキーマ/ローマ字テーブル） | 送受信する型・共有データの正典。**契約は変更しない**（変更は Proto 側で人間承認） |
-| **[Textro99-Client-Docs](https://github.com/Okashimachi/Textro99-Client-Docs)** | Web/Unity 共通クライアント設計 | アーキ・モジュール分割・状態管理・ディスパッチ・打鍵判定・画面遷移の共通設計。Web はこれをミラー実装する |
-| **[Textro99-Docs](https://github.com/Okashimachi/Textro99-Docs)** | 企画・ゲーム/サーバー仕様の正典 | 本リポの仕様は `04_クライアント仕様/02_Webフロント仕様.md`、通信モデルは `01_コア設計書.md`（A案） |
-| **[用語集（ユビキタス言語）](https://github.com/Okashimachi/Textro99-Docs/blob/main/01_企画/00_用語集.md)** | 日本語 ↔ コード上の名称（英語）の対応正典 | **変数・型・コンポーネント・関数名はここに合わせる**（`Daken` / `DakenId` / `Combo` / `TypingJudge` / `RomajiTable` 等）。テーマ変更時も**コード上の名称は変えない**（表示名だけ差し替える） |
+| 1 | [01-責務と絶対原則](./docs/rules/01-責務と絶対原則.md)（責務境界・サーバー権威・打鍵判定のみ許可） | **全作業の前提** |
+| 2 | [02-フロント実装ルール](./docs/rules/02-フロント実装ルール.md)（分割・状態管理・環境変数・proto 版固定） | 実装前 |
+| 3 | [03-Git運用](./docs/rules/03-Git運用.md)（ブランチ・コミット規約・禁止コマンド） | commit / push 前 |
+| 4 | [04-PRとレビュー](./docs/rules/04-PRとレビュー.md)（PR の流れ・レビュー観点・マージ権限） | PR 前 |
 
----
+## 作業ログ（docs/worklog/）
 
-## 2. ルール本体（docs/rules/）
+指示・判断・テスト・トークン消費を **1タスク＝1ディレクトリ**で残す（[README](./docs/worklog/README.md)）。着手時に [`_template/`](./docs/worklog/_template/) をコピーし `log-NNN-{主題}/`（連番・欠番なし）で起票、完了時に 03/06/07 を必ず埋め索引に追加。
 
-具体的な責務・原則・禁止事項・運用ルールは以下に分冊している。**該当する作業を始める前に必ず読むこと。**
+## 最優先の禁止（詳細は各分冊）
 
-| # | ファイル | 内容 | いつ読むか |
-|---|---|---|---|
-| — | [docs/rules/README.md](./docs/rules/README.md) | ルール分冊の索引 | 迷ったら |
-| 1 | [docs/rules/01-責務と絶対原則.md](./docs/rules/01-責務と絶対原則.md) | クライアントの責務境界・サーバー権威・打鍵判定のみ許可・してはいけない設計 | **全作業の前提（必読）** |
-| 2 | [docs/rules/02-フロント実装ルール.md](./docs/rules/02-フロント実装ルール.md) | コンポーネント分割・状態管理・環境変数・proto 版固定・RawStateDebugPane | 実装コードを書く前 |
-| 3 | [docs/rules/03-Git運用.md](./docs/rules/03-Git運用.md) | ブランチ構成・Git ポリシー・コミット規約・禁止コマンド | commit / push の前 |
-| 4 | [docs/rules/04-PRとレビュー.md](./docs/rules/04-PRとレビュー.md) | PR の流れ・粒度・レビュー観点・マージ権限 | PR 作成 / レビューの前 |
-
----
-
-## 3. 作業ログ（docs/worklog/）
-
-指示・AIの判断と決定・テスト仕様/結果・トークン消費を **1タスク＝1ディレクトリ**で残す（関心事ごとにファイル分割）。詳細は [docs/worklog/README.md](./docs/worklog/README.md)。
-
-- タスク着手時に [docs/worklog/_template/](./docs/worklog/_template/) をコピーし、`log-NNN-{主題}/`（3桁連番・欠番なし）で起票する。
-- 完了時に **03-判断と決定 / 06-テスト結果 / 07-トークン消費** を必ず埋め、README の索引に1行追加する。
-
----
-
-## 4. やってはいけないこと（要点のみ・詳細は各分冊）
-
-- ❌ JS/TS に戦闘ロジックを書く（唯一の例外は打鍵判定）→ [01](./docs/rules/01-責務と絶対原則.md)
-- ❌ 契約（メッセージ/型/スキーマ）をこのリポジトリで変更・確定する → [01](./docs/rules/01-責務と絶対原則.md)
-- ❌ **`develop` / `main` へマージする**（指示があっても不可。人間が行う）→ [03](./docs/rules/03-Git運用.md)
-- ❌ `git reset --hard` / `git rebase -i` / `rm -rf` を指示なく実行する → [03](./docs/rules/03-Git運用.md)
-- ❌ 秘密情報（本番URL・トークン）をコミットする → [03](./docs/rules/03-Git運用.md)
-- ❌ プロダクト名を勝手にリネームする（`textro99` を維持）
+- ❌ JS/TS に戦闘ロジックを書く（例外は打鍵判定のみ）→ [01](./docs/rules/01-責務と絶対原則.md)
+- ❌ 契約（型/メッセージ/スキーマ）を本リポで変更・確定する → [01](./docs/rules/01-責務と絶対原則.md)
+- ❌ **`develop`/`main` へマージする**（指示があっても不可・人間が行う）→ [03](./docs/rules/03-Git運用.md)
+- ❌ `git reset --hard` / `git rebase -i` / `rm -rf` を指示なく実行 → [03](./docs/rules/03-Git運用.md)
+- ❌ 秘密情報（本番URL・トークン）をコミット → [03](./docs/rules/03-Git運用.md)
