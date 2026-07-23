@@ -1,0 +1,38 @@
+# --- dependencies ---
+node_modules/
+.pnp
+.pnp.js
+
+# --- build output ---
+dist/
+dist-ssr/
+build/
+*.local
+
+# --- env / secrets（本番URL・トークン・APIキーは絶対にコミットしない） ---
+.env
+.env.*
+!.env.example
+
+# --- logs ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- editor / OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- test / coverage ---
+coverage/
+*.tsbuildinfo
+
+# --- vite / cache ---
+.vite/
+node_modules/.vite/
