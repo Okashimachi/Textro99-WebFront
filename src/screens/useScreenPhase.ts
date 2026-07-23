@@ -14,6 +14,8 @@ export interface ScreenActions {
   seekMatch: () => void;
   /** リザルト → タイトルへ戻る。 */
   backToTitle: () => void;
+  /** 待機 → タイトル（マッチング離脱）。 */
+  leaveMatchmaking: () => void;
   /** リザルト → 再マッチング（待機へ）。 */
   rematch: () => void;
 }
@@ -40,6 +42,7 @@ export function useScreenPhase(state: GameViewModel): UseScreenPhase {
     () => ({
       seekMatch: () => setIntent("seeking"),
       backToTitle: () => setIntent("dismissedResult"),
+      leaveMatchmaking: () => setIntent("idle"),
       rematch: () => setIntent("seeking"),
     }),
     [],

@@ -69,7 +69,11 @@ export function gameReducer(
     }
 
     case MessageType.MatchmakingStatus: {
-      return { ...state, matchmaking: payload as MatchmakingStatus };
+      return {
+        ...state,
+        matchmaking: payload as MatchmakingStatus,
+        matchmakingReceivedAtMs: receivedAtMs,
+      };
     }
 
     case MessageType.MatchStart: {

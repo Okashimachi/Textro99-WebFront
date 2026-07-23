@@ -5,11 +5,19 @@ import type { GameViewModel } from "@/state";
 import type { ScreenPhase } from "./lifecycle";
 import type { ScreenActions } from "./useScreenPhase";
 import { InMatchScreen } from "./InMatchScreen";
+import { MatchmakingScreen } from "./MatchmakingScreen";
+
+/** 画面から発火するマッチング関連の送信。実体は App が connection.send で配線する。 */
+export interface MatchmakingNet {
+  join: () => void;
+  leave: () => void;
+}
 
 interface Props {
   phase: ScreenPhase;
   state: GameViewModel;
   actions: ScreenActions;
+  net: MatchmakingNet;
   /** 入力送信層(#7)の選択中戦略。 */
   selectedStrategyId?: number | null;
   /** 打鍵途中経過（#8 予定・表示専用）。 */
@@ -20,6 +28,7 @@ export function ScreenRouter({
   phase,
   state,
   actions,
+  net,
   selectedStrategyId = null,
   typedPrefix,
 }: Props) {
@@ -28,7 +37,10 @@ export function ScreenRouter({
       return (
         <Placeholder title="タイトル">
           <button
-            onClick={actions.seekMatch}
+            onClick={() => {
+              actions.seekMatch();
+              net.join();
+            }}
             className="rounded bg-emerald-600 px-4 py-2 font-bold hover:bg-emerald-500"
           >
             マッチングに参加
@@ -38,13 +50,14 @@ export function ScreenRouter({
 
     case "matchmaking":
       return (
-        <Placeholder title="マッチング待機">
-          <p className="text-slate-300">
-            待機人数: {state.matchmaking?.waitingCount ?? "—"} / 最少{" "}
-            {state.matchmaking?.minPlayers ?? "—"}
-          </p>
-          <p className="text-xs text-slate-500">（画面本体は #10 で実装）</p>
-        </Placeholder>
+        <MatchmakingScreen
+          status={state.matchmaking}
+          statusReceivedAtMs={state.matchmakingReceivedAtMs}
+          onLeave={() => {
+            net.leave();
+            actions.leaveMatchmaking();
+          }}
+        />
       );
 
     case "inMatch":
@@ -79,7 +92,10 @@ export function ScreenRouter({
           <p className="text-xs text-slate-500">（画面本体は #13 で実装）</p>
           <div className="mt-3 flex gap-2">
             <button
-              onClick={actions.rematch}
+              onClick={() => {
+                actions.rematch();
+                net.join();
+              }}
               className="rounded bg-emerald-600 px-4 py-2 font-bold hover:bg-emerald-500"
             >
               再マッチング
