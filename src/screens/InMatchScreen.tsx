@@ -8,6 +8,7 @@ import { DakenStackView } from "@/components/hud/DakenStackView";
 import { AttackWarningBar } from "@/components/hud/AttackWarningBar";
 import { StrategySelector } from "@/components/hud/StrategySelector";
 import { EventLog } from "@/components/hud/EventLog";
+import { PlayerGrid99 } from "@/components/PlayerGrid99";
 
 interface Props {
   state: GameViewModel;
@@ -45,7 +46,7 @@ export function InMatchScreen({
         <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-sm">
           生存 <span className="font-bold">{state.aliveCount}</span> / 99
         </div>
-        {/* PlayerGrid99 は #12 でここに差し込む */}
+        <PlayerGrid99 players={state.players} selfPlayerId={state.selfPlayerId} />
         <EventLog events={state.events} />
       </div>
     </div>
