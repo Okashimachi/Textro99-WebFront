@@ -130,6 +130,14 @@ export class WsConnection {
     };
   }
 
+  /**
+   * サーバー無しでの検証・リプレイ用。受信したかのように Envelope をディスパッチする。
+   * 実通信経路（handleRawMessage）と同一の分岐を通す。
+   */
+  simulateReceive(envelope: Envelope): void {
+    this.handleRawMessage(JSON.stringify(envelope));
+  }
+
   /** 接続状態の変化を購読する。戻り値は解除関数。 */
   onStatusChange(listener: StatusListener): () => void {
     this.statusListeners.add(listener);
