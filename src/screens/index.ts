@@ -11,3 +11,4 @@ export {
   type ScreenActions,
 } from "./useScreenPhase";
 export { ScreenRouter } from "./ScreenRouter";
+export { InMatchScreen } from "./InMatchScreen";
