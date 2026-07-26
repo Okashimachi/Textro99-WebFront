@@ -37,3 +37,15 @@ docs/worklog/log-NNN-{短いkebab-caseの主題}/
 | # | タスク | 状態 | 日付 |
 |---|---|---|---|
 | [001](./log-001-proto-vendoring/README.md) | proto の TS 型取り込み（手コピー方式） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [002](./log-002-webfront-scaffold/README.md) | Vite+React+TS+Tailwind 基盤スキャフォールド（#3） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [003](./log-003-ws-dispatch/README.md) | WebSocket接続・メッセージディスパッチ層（#4） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [004](./log-004-state-reducer/README.md) | 受信stateのreducer/ViewModel（#5） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [005](./log-005-debug-pane/README.md) | RawStateDebugPane＋devモック（#6） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [006](./log-006-lifecycle/README.md) | 画面ライフサイクル状態機械（#9） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [007](./log-007-input/README.md) | 入力送信層（文字/Enter/0-9→各C2S）（#7） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [008](./log-008-hud/README.md) | 試合中HUDコンポーネント群（#11） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [009](./log-009-player-grid/README.md) | PlayerGrid99（99人ミニ盤面）（#12） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [010](./log-010-matchmaking/README.md) | マッチング待機画面（#10） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [011](./log-011-result/README.md) | リザルト画面（GameOver）（#13） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [012](./log-012-blocked-issues/README.md) | ブロック中 Issue の記録（#8 TypingJudge / #14 デプロイ） | ⏸ 保留 | 2026-07-23 |
+| [014](./log-014-typing-judge/README.md) | タイピング判定(#8)＋フロント完結テスト/サーバー切替 | ✅ 実装・ブラウザ検証済み | 2026-07-26 |
