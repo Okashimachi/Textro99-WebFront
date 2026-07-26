@@ -25,6 +25,8 @@ interface Props {
   typedPrefix?: string;
   /** ミス打鍵の累計（#8・表示専用）。 */
   missCount?: number;
+  /** 自分の表示名（プロフィール名）。 */
+  selfDisplayName?: string;
 }
 
 export function ScreenRouter({
@@ -35,19 +37,19 @@ export function ScreenRouter({
   selectedStrategyId = null,
   typedPrefix,
   missCount,
+  selfDisplayName,
 }: Props) {
   switch (phase) {
     case "title":
+      // 実タイトルは setup フロー（App）が持つ。ここに来るのは接続〜MatchStart 待ちの間。
       return (
-        <Placeholder title="タイトル">
+        <Placeholder title="接続中…">
+          <p className="text-sm text-slate-400">サーバーに接続しています（起動に数秒かかることがあります）</p>
           <button
-            onClick={() => {
-              actions.seekMatch();
-              net.join();
-            }}
-            className="rounded bg-emerald-600 px-4 py-2 font-bold hover:bg-emerald-500"
+            onClick={actions.backToTitle}
+            className="rounded bg-slate-600 px-4 py-2 text-sm hover:bg-slate-500"
           >
-            マッチングに参加
+            キャンセル
           </button>
         </Placeholder>
       );
@@ -71,6 +73,7 @@ export function ScreenRouter({
           selectedStrategyId={selectedStrategyId}
           typedPrefix={typedPrefix}
           missCount={missCount}
+          selfDisplayName={selfDisplayName}
         />
       );
 
@@ -81,6 +84,7 @@ export function ScreenRouter({
           selectedStrategyId={selectedStrategyId}
           typedPrefix={typedPrefix}
           missCount={missCount}
+          selfDisplayName={selfDisplayName}
           spectating
         />
       );

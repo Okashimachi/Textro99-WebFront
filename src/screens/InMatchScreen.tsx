@@ -8,6 +8,7 @@ import { DakenStackView } from "@/components/hud/DakenStackView";
 import { AttackWarningBar } from "@/components/hud/AttackWarningBar";
 import { StrategySelector } from "@/components/hud/StrategySelector";
 import { EventLog } from "@/components/hud/EventLog";
+import { LiveRanking } from "@/components/hud/LiveRanking";
 import { PlayerGrid99 } from "@/components/PlayerGrid99";
 
 interface Props {
@@ -18,6 +19,8 @@ interface Props {
   typedPrefix?: string;
   /** ミス打鍵の累計（#8・表示専用）。 */
   missCount?: number;
+  /** 自分の表示名（プロフィール名）。ランキングの自分の行に出す。 */
+  selfDisplayName?: string;
   /** 観戦中（脱落済み）なら操作系をトーンダウンする。 */
   spectating?: boolean;
 }
@@ -27,6 +30,7 @@ export function InMatchScreen({
   selectedStrategyId,
   typedPrefix,
   missCount,
+  selfDisplayName,
   spectating = false,
 }: Props) {
   return (
@@ -53,6 +57,11 @@ export function InMatchScreen({
         <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-sm">
           生存 <span className="font-bold">{state.aliveCount}</span> / 99
         </div>
+        <LiveRanking
+          players={state.players}
+          selfPlayerId={state.selfPlayerId}
+          selfDisplayName={selfDisplayName}
+        />
         <PlayerGrid99 players={state.players} selfPlayerId={state.selfPlayerId} />
         <EventLog events={state.events} />
       </div>
