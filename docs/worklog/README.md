@@ -48,3 +48,4 @@ docs/worklog/log-NNN-{短いkebab-caseの主題}/
 | [010](./log-010-matchmaking/README.md) | マッチング待機画面（#10） | ✅ 完了（PR待ち） | 2026-07-23 |
 | [011](./log-011-result/README.md) | リザルト画面（GameOver）（#13） | ✅ 完了（PR待ち） | 2026-07-23 |
 | [012](./log-012-blocked-issues/README.md) | ブロック中 Issue の記録（#8 TypingJudge / #14 デプロイ） | ⏸ 保留 | 2026-07-23 |
+| [014](./log-014-typing-judge/README.md) | タイピング判定(#8)＋フロント完結テスト/サーバー切替 | ✅ 実装・ブラウザ検証済み | 2026-07-26 |

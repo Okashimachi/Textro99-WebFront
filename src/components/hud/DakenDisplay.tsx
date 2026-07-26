@@ -5,8 +5,10 @@ import type { DakenInstance } from "@/proto/types";
 
 interface Props {
   activeDaken: DakenInstance[];
-  /** 表示専用の打鍵途中経過（#8 が公開する予定）。未接続時は空。 */
+  /** 表示専用の打鍵途中経過（#8 TypingJudge が公開）。未接続時は空。 */
   typedPrefix?: string;
+  /** ミス打鍵の累計（#8・表示専用）。 */
+  missCount?: number;
 }
 
 const TYPE_LABEL: Record<DakenInstance["type"], string> = {
@@ -21,12 +23,18 @@ const TYPE_COLOR: Record<DakenInstance["type"], string> = {
   Trap: "text-rose-400",
 };
 
-export function DakenDisplay({ activeDaken, typedPrefix = "" }: Props) {
+export function DakenDisplay({ activeDaken, typedPrefix = "", missCount = 0 }: Props) {
   const current = activeDaken[0];
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-4">
-      <div className="mb-1 text-xs text-slate-400">
-        出題ダケン {activeDaken.length > 0 ? `(残り ${activeDaken.length})` : ""}
+      <div className="mb-1 flex items-center justify-between text-xs text-slate-400">
+        <span>出題ダケン {activeDaken.length > 0 ? `(残り ${activeDaken.length})` : ""}</span>
+        {current && (
+          <span>
+            打鍵 {typedPrefix.length}/{current.text.length}
+            {missCount > 0 && <span className="ml-2 text-rose-400">ミス {missCount}</span>}
+          </span>
+        )}
       </div>
       {current ? (
         <div>
@@ -37,6 +45,9 @@ export function DakenDisplay({ activeDaken, typedPrefix = "" }: Props) {
           </span>
           <div className={`mt-2 text-3xl font-bold tracking-wide ${TYPE_COLOR[current.type]}`}>
             {highlight(current.text, typedPrefix)}
+          </div>
+          <div className="mt-2 text-xs text-slate-500">
+            そのまま入力してください（Enter=攻撃 / 0-9=作戦）
           </div>
         </div>
       ) : (

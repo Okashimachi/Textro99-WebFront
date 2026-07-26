@@ -21,8 +21,10 @@ interface Props {
   net: MatchmakingNet;
   /** 入力送信層(#7)の選択中戦略。 */
   selectedStrategyId?: number | null;
-  /** 打鍵途中経過（#8 予定・表示専用）。 */
+  /** 打鍵途中経過（#8・表示専用）。 */
   typedPrefix?: string;
+  /** ミス打鍵の累計（#8・表示専用）。 */
+  missCount?: number;
 }
 
 export function ScreenRouter({
@@ -32,6 +34,7 @@ export function ScreenRouter({
   net,
   selectedStrategyId = null,
   typedPrefix,
+  missCount,
 }: Props) {
   switch (phase) {
     case "title":
@@ -67,6 +70,7 @@ export function ScreenRouter({
           state={state}
           selectedStrategyId={selectedStrategyId}
           typedPrefix={typedPrefix}
+          missCount={missCount}
         />
       );
 
@@ -76,6 +80,7 @@ export function ScreenRouter({
           state={state}
           selectedStrategyId={selectedStrategyId}
           typedPrefix={typedPrefix}
+          missCount={missCount}
           spectating
         />
       );
