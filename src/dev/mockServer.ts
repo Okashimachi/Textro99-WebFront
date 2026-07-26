@@ -11,7 +11,6 @@
 
 import {
   MessageType,
-  type DakenClearReport,
   type DakenInstance,
   type Envelope,
   type PlayerSummary,
@@ -94,13 +93,11 @@ export function startMockServer(
     if (stopped) return;
 
     if (env.type === MessageType.DakenClearReport) {
-      const rep = env.payload as DakenClearReport;
-      // クリア＝コンボ+1（模擬）。実サーバーの確定ロジックとは無関係のダミー。
+      // 実サーバーに合わせる: クリアしたお題は DakenExpired せず、次の DakenIssued のみ返す。
+      // クリア済みお題の active からの除去はクライアント（App.onClear）が行う。
       combo += 1;
       recv(MessageType.ComboUpdated, { comboValue: combo, delta: 1, reason: "Clear" });
       recv(MessageType.DakenStackUpdated, { count: 0, limit: 20, trapPending: false });
-      // 打ち終えたお題を消化して次を出題。
-      recv(MessageType.DakenExpired, { dakenId: rep.dakenId });
       recv(MessageType.DakenIssued, { daken: [nextDaken()] });
     } else if (env.type === MessageType.AttackRequest) {
       // Enter=攻撃。コンボ全消費（模擬）。
