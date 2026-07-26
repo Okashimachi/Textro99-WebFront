@@ -47,8 +47,9 @@ export function deriveScreenPhase(
   if (state.matchId && !state.gameOver) {
     return isSelfAlive(state) ? "inMatch" : "spectating";
   }
-  // 待機：マッチング状態を受信中、または参加表明済み。
-  if (state.matchmaking || intent === "seeking") {
+  // 待機：ユーザーが参加表明中のみ。離脱(idle)でタイトルへ戻る。
+  // サーバーの MatchmakingStatus 値は seeking 中に画面へ反映する。
+  if (intent === "seeking") {
     return "matchmaking";
   }
   return "title";

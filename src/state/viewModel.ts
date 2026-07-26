@@ -85,6 +85,8 @@ export interface GameViewModel {
 
   // マッチング / リザルト
   matchmaking: import("@/proto/types").MatchmakingStatus | null;
+  // MatchmakingStatus の受信時刻（カウントダウン残時間の表示基準・表示専用）
+  matchmakingReceivedAtMs: number | null;
   gameOver: import("@/proto/types").GameOver | null;
 
   // 直近イベント（新しいものが先頭）
@@ -108,6 +110,7 @@ export function createInitialViewModel(): GameViewModel {
     dakenStack: { count: 0, limit: 0, trapPending: false },
     incomingAttacks: [],
     matchmaking: null,
+    matchmakingReceivedAtMs: null,
     gameOver: null,
     events: [],
     eventSeq: 0,

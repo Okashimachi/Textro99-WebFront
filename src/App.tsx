@@ -2,7 +2,7 @@
 // RawStateDebugPane（#6）を常設する。画面遷移や HUD は後続 Issue（#9〜）で追加。
 import { useEffect, useMemo, useState } from "react";
 import { WsConnection } from "@/net";
-import type { Envelope } from "@/proto/types";
+import { MessageType, type Envelope } from "@/proto/types";
 import { useGameState } from "@/state";
 import { ScreenRouter, useScreenPhase } from "@/screens";
 import { useInputController } from "@/input";
@@ -48,6 +48,10 @@ export function App() {
           phase={phase}
           state={state}
           actions={actions}
+          net={{
+            join: () => connection.send(MessageType.MatchmakingJoin, {}),
+            leave: () => connection.send(MessageType.MatchmakingLeave, {}),
+          }}
           selectedStrategyId={selectedStrategyId}
           typedPrefix={lastChar ?? ""}
         />

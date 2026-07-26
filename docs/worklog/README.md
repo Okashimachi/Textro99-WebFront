@@ -45,3 +45,4 @@ docs/worklog/log-NNN-{短いkebab-caseの主題}/
 | [007](./log-007-input/README.md) | 入力送信層（文字/Enter/0-9→各C2S）（#7） | ✅ 完了（PR待ち） | 2026-07-23 |
 | [008](./log-008-hud/README.md) | 試合中HUDコンポーネント群（#11） | ✅ 完了（PR待ち） | 2026-07-23 |
 | [009](./log-009-player-grid/README.md) | PlayerGrid99（99人ミニ盤面）（#12） | ✅ 完了（PR待ち） | 2026-07-23 |
+| [010](./log-010-matchmaking/README.md) | マッチング待機画面（#10） | ✅ 完了（PR待ち） | 2026-07-23 |
