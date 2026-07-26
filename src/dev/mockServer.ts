@@ -1,0 +1,118 @@
+// ============================================================================
+// フロント完結テスト用のローカル模擬サーバー（dev 専用）
+//
+// 目的: サーバー未接続でも「お題がランダムに送られてくる → 表示 → タイピング →
+// ダケン判定」のループを GUI で試せるようにする。実サーバーの代わりに、
+// WsConnection.simulateReceive で S2C を流し、onOutbound で C2S を受けて応答する。
+//
+// これは検証用のスタブであり、ゲームロジック（コンボ/威力/相殺/KO）の正典ではない。
+// 実挙動は必ず実サーバーで確認すること（docs/rules/02 §2）。
+// ============================================================================
+
+import {
+  MessageType,
+  type DakenClearReport,
+  type DakenInstance,
+  type Envelope,
+  type PlayerSummary,
+} from "@/proto/types";
+import type { WsConnection } from "@/net";
+
+// お題は「打鍵列そのもの（ローマ字/英字）」。かな→ローマ字変換は今回持たないため
+// ローマ字綴りの単語を出題する（judge.ts の直接照合前提に合わせる）。
+const WORDS = [
+  "neko", "inu", "tori", "sushi", "ramen", "tokyo", "kyoto", "sakura", "matcha",
+  "ninja", "samurai", "fuji", "kimono", "sensei", "arigato", "konnichiwa",
+  "type", "fast", "combo", "attack", "battle", "royale", "victory", "keyboard",
+  "hello", "world", "react", "vite", "typescript", "textro",
+];
+
+const randomWord = () => WORDS[Math.floor(Math.random() * WORDS.length)];
+
+export interface MockServerOptions {
+  /** 自分の表示上の playerId。 */
+  selfId?: string;
+}
+
+/**
+ * ローカル模擬サーバーを起動する。戻り値を呼ぶと停止する。
+ * 起動時に Welcome → MatchStart（初期お題つき）を流し、以降は
+ * DakenClearReport を受けるたびに ComboUpdated＋次のお題を返す。
+ */
+export function startMockServer(
+  connection: WsConnection,
+  options: MockServerOptions = {},
+): () => void {
+  const selfId = options.selfId ?? "you";
+  let stopped = false;
+  let seq = 0;
+  let combo = 0;
+
+  const recv = (type: MessageType, payload: unknown) => {
+    if (!stopped) connection.simulateReceive({ type, payload } as Envelope);
+  };
+
+  const nextDaken = (): DakenInstance => {
+    seq += 1;
+    return {
+      dakenId: `mock-${seq}`,
+      type: "Normal",
+      text: randomWord(),
+      difficultyLevel: 0,
+      timeLimitMs: 999_999, // ローカルテストでは時間切れさせない
+      issuedAtServerTimeMs: Date.now(),
+    };
+  };
+
+  const self: PlayerSummary = {
+    playerId: selfId,
+    displayName: "あなた",
+    comboValue: 0,
+    dakenStackCount: 0,
+    dakenStackLimit: 20,
+    badgeCount: 0,
+    alive: true,
+  };
+
+  // 初期化: Welcome → MatchStart（初期お題つき）。
+  recv(MessageType.Welcome, { playerId: selfId });
+  recv(MessageType.MatchStart, {
+    matchId: "mock-match",
+    selfPlayerId: selfId,
+    players: [self],
+    initialDaken: nextDaken(),
+    parameters: {
+      stackLimit: 20,
+      trapTriggerInterval: 5,
+      personalDifficultyStep: 20,
+      difficultyMaxLevel: 10,
+    },
+  });
+
+  // C2S を監視して応答する（未接続でも onOutbound は発火する）。
+  const off = connection.onOutbound((env) => {
+    if (stopped) return;
+
+    if (env.type === MessageType.DakenClearReport) {
+      const rep = env.payload as DakenClearReport;
+      // クリア＝コンボ+1（模擬）。実サーバーの確定ロジックとは無関係のダミー。
+      combo += 1;
+      recv(MessageType.ComboUpdated, { comboValue: combo, delta: 1, reason: "Clear" });
+      recv(MessageType.DakenStackUpdated, { count: 0, limit: 20, trapPending: false });
+      // 打ち終えたお題を消化して次を出題。
+      recv(MessageType.DakenExpired, { dakenId: rep.dakenId });
+      recv(MessageType.DakenIssued, { daken: [nextDaken()] });
+    } else if (env.type === MessageType.AttackRequest) {
+      // Enter=攻撃。コンボ全消費（模擬）。
+      const consumed = combo;
+      combo = 0;
+      recv(MessageType.ComboUpdated, { comboValue: 0, delta: -consumed, reason: "Consumed" });
+    }
+    // StrategySelect はローカルでは応答不要（選択表示は入力層が持つ）。
+  });
+
+  return () => {
+    stopped = true;
+    off();
+  };
+}

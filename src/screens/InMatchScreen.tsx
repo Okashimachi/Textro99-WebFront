@@ -14,8 +14,10 @@ interface Props {
   state: GameViewModel;
   /** 入力送信層(#7)が保持する選択中戦略。 */
   selectedStrategyId: number | null;
-  /** 打鍵途中経過（#8 TypingJudge が公開予定・表示専用）。 */
+  /** 打鍵途中経過（#8 TypingJudge が公開・表示専用）。 */
   typedPrefix?: string;
+  /** ミス打鍵の累計（#8・表示専用）。 */
+  missCount?: number;
   /** 観戦中（脱落済み）なら操作系をトーンダウンする。 */
   spectating?: boolean;
 }
@@ -24,6 +26,7 @@ export function InMatchScreen({
   state,
   selectedStrategyId,
   typedPrefix,
+  missCount,
   spectating = false,
 }: Props) {
   return (
@@ -35,7 +38,11 @@ export function InMatchScreen({
           </div>
         )}
         <AttackWarningBar incomingAttacks={state.incomingAttacks} />
-        <DakenDisplay activeDaken={state.activeDaken} typedPrefix={typedPrefix} />
+        <DakenDisplay
+          activeDaken={state.activeDaken}
+          typedPrefix={typedPrefix}
+          missCount={missCount}
+        />
         <div className="grid gap-3 sm:grid-cols-2">
           <ComboGauge combo={state.combo} />
           <DakenStackView dakenStack={state.dakenStack} />
