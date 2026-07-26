@@ -18,13 +18,13 @@ import {
 } from "@/proto/types";
 import type { WsConnection } from "@/net";
 
-// お題は「打鍵列そのもの（ローマ字/英字）」。かな→ローマ字変換は今回持たないため
-// ローマ字綴りの単語を出題する（judge.ts の直接照合前提に合わせる）。
+// お題は実サーバーに合わせて「かな」。判定側（judge.ts + romaji.ts）が
+// かな→受理ローマ字へ変換して打鍵判定する。表記ゆれ・拗音・促音・ん も含めて出題。
 const WORDS = [
-  "neko", "inu", "tori", "sushi", "ramen", "tokyo", "kyoto", "sakura", "matcha",
-  "ninja", "samurai", "fuji", "kimono", "sensei", "arigato", "konnichiwa",
-  "type", "fast", "combo", "attack", "battle", "royale", "victory", "keyboard",
-  "hello", "world", "react", "vite", "typescript", "textro",
+  "ねこ", "いぬ", "とり", "すし", "らーめん", "とうきょう", "きょうと", "さくら",
+  "まっちゃ", "にんじゃ", "さむらい", "ふじ", "きもの", "せんせい", "ありがとう",
+  "こんにちは", "しゃしん", "きゅうり", "がっこう", "でんしゃ", "ちゃわん", "しんぶん",
+  "たいぴんぐ", "こんぼ", "こうげき", "しょうり", "ぷれいやー", "ばとる",
 ];
 
 const randomWord = () => WORDS[Math.floor(Math.random() * WORDS.length)];
