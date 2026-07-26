@@ -24,6 +24,9 @@ export type ConnectionStatus =
 
 export type StatusListener = (status: ConnectionStatus) => void;
 
+/** 送信（またはその試行）を観測するリスナ。sent=false は未接続で実送信されなかった場合。 */
+export type OutboundListener = (envelope: Envelope, sent: boolean) => void;
+
 export interface WsConnectionOptions {
   /** 接続先 URL。既定は import.meta.env.VITE_WS_URL。 */
   url?: string;
@@ -45,6 +48,7 @@ export class WsConnection {
 
   private readonly handlers = new Map<string, Set<MessageHandler>>();
   private readonly statusListeners = new Set<StatusListener>();
+  private readonly outboundListeners = new Set<OutboundListener>();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private manuallyClosed = false;
   private _status: ConnectionStatus = "idle";
@@ -105,13 +109,16 @@ export class WsConnection {
 
   /** C2S を Envelope { type, payload } として送る。未接続時は false を返す。 */
   send(type: MessageType, payload: unknown): boolean {
-    if (!this.ws || this._status !== "open") {
-      console.warn(`[WsConnection] 未接続のため送信できません: ${type}`);
-      return false;
-    }
     const envelope: Envelope = { type, payload };
-    this.ws.send(JSON.stringify(envelope));
-    return true;
+    const open = !!this.ws && this._status === "open";
+    if (open) {
+      this.ws!.send(JSON.stringify(envelope));
+    } else {
+      console.warn(`[WsConnection] 未接続のため送信できません: ${type}`);
+    }
+    // 未接続でも観測はできるようにする（dev 表示・テスト用）。
+    for (const l of this.outboundListeners) l(envelope, open);
+    return open;
   }
 
   /**
@@ -143,6 +150,14 @@ export class WsConnection {
     this.statusListeners.add(listener);
     return () => {
       this.statusListeners.delete(listener);
+    };
+  }
+
+  /** 送信（試行含む）を購読する。戻り値は解除関数。dev 表示・テスト用。 */
+  onOutbound(listener: OutboundListener): () => void {
+    this.outboundListeners.add(listener);
+    return () => {
+      this.outboundListeners.delete(listener);
     };
   }
 
