@@ -2,6 +2,7 @@
 // DTO（DakenInstance）と表示用の打鍵途中経過(typedPrefix)のみを入力とし、判定ロジックは持たない。
 // 判定は #8 TypingJudge の責務。ここは「表示」だけ。
 import type { DakenInstance } from "@/proto/types";
+import { romajiHint } from "@/typing/romaji";
 
 interface Props {
   activeDaken: DakenInstance[];
@@ -46,8 +47,11 @@ export function DakenDisplay({ activeDaken, typedPrefix = "", missCount = 0 }: P
           <div className={`mt-2 text-3xl font-bold tracking-wide ${TYPE_COLOR[current.type]}`}>
             {highlight(current.text, typedPrefix)}
           </div>
+          <div className="mt-1 font-mono text-lg tracking-wide text-slate-400">
+            {romajiHint(current.text)}
+          </div>
           <div className="mt-2 text-xs text-slate-500">
-            そのまま入力してください（Enter=攻撃 / 0-9=作戦）
+            ローマ字で入力（Enter=攻撃 / 0-9=作戦）
           </div>
         </div>
       ) : (
