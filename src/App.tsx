@@ -184,7 +184,10 @@ export function App() {
                 onClick={() => {
                   const daken = state.activeDaken[0];
                   if (!daken) return;
-                  connection.send(MessageType.DakenClearReport, {
+                  // onClear 経由で送る（送信＋現在お題の active 除去をまとめて行う）。
+                  // connection.send を直接呼ぶと DakenExpired が注入されず、次のお題が
+                  // 追加されるだけで先頭が入れ替わらない＝画面上お題が進まないため。
+                  onClear({
                     dakenId: daken.dakenId,
                     isMiss: false,
                     missCount: 0,
