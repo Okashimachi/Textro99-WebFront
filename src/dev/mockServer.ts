@@ -73,26 +73,40 @@ export function startMockServer(
     alive: true,
   };
 
+  // 試合開始シーケンス（初期化・再マッチング双方から呼ぶ）。
+  // matchId を毎回変えることで reducer の MatchStart が gameOver をクリアし、
+  // リザルト → マッチング → 試合中 の再マッチングループが練習モードでも回る。
+  let matchSeq = 0;
+  const startMatch = () => {
+    matchSeq += 1;
+    combo = 0;
+    recv(MessageType.MatchStart, {
+      matchId: `mock-match-${matchSeq}`,
+      selfPlayerId: selfId,
+      players: [{ ...self }],
+      initialDaken: nextDaken(),
+      parameters: {
+        stackLimit: 20,
+        trapTriggerInterval: 5,
+        personalDifficultyStep: 20,
+        difficultyMaxLevel: 10,
+      },
+    });
+  };
+
   // 初期化: Welcome → MatchStart（初期お題つき）。
   recv(MessageType.Welcome, { playerId: selfId });
-  recv(MessageType.MatchStart, {
-    matchId: "mock-match",
-    selfPlayerId: selfId,
-    players: [self],
-    initialDaken: nextDaken(),
-    parameters: {
-      stackLimit: 20,
-      trapTriggerInterval: 5,
-      personalDifficultyStep: 20,
-      difficultyMaxLevel: 10,
-    },
-  });
+  startMatch();
 
   // C2S を監視して応答する（未接続でも onOutbound は発火する）。
   const off = connection.onOutbound((env) => {
     if (stopped) return;
 
-    if (env.type === MessageType.DakenClearReport) {
+    if (env.type === MessageType.MatchmakingJoin) {
+      // 再マッチング: 実サーバーの MatchmakingJoin → MatchStart に相当する応答。
+      // （マッチング待機をスキップして即開始する簡易スタブ。）
+      startMatch();
+    } else if (env.type === MessageType.DakenClearReport) {
       // 実サーバーに合わせる: クリアしたお題は DakenExpired せず、次の DakenIssued のみ返す。
       // クリア済みお題の active からの除去はクライアント（App.onClear）が行う。
       combo += 1;
