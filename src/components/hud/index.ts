@@ -1,4 +1,5 @@
 export { DakenDisplay } from "./DakenDisplay";
+export { PlayField } from "./PlayField";
 export { ComboGauge } from "./ComboGauge";
 export { DakenStackView } from "./DakenStackView";
 export { AttackWarningBar } from "./AttackWarningBar";

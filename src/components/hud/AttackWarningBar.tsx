@@ -28,7 +28,7 @@ export function AttackWarningBar({ incomingAttacks }: Props) {
         return (
           <div
             key={a.warningId}
-            className="rounded-lg border border-rose-600/60 bg-rose-950/40 p-3"
+            className="animate-warn-drop rounded-lg border border-rose-600/60 bg-rose-950/40 p-3"
           >
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-rose-300">
