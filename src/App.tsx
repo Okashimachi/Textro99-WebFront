@@ -55,7 +55,15 @@ export function App() {
 
   // タイピング判定(#8)。完了で DakenClearReport を送る。
   const onClear = useCallback(
-    (report: DakenClearReport) => connection.send(MessageType.DakenClearReport, report),
+    (report: DakenClearReport) => {
+      connection.send(MessageType.DakenClearReport, report);
+      // サーバーはクリアしたお題を DakenExpired しない（次の DakenIssued のみ送る）。
+      // 打鍵判定はクライアントの権威なので、確定したお題をローカルで active から除去して次へ進める。
+      connection.simulateReceive({
+        type: MessageType.DakenExpired,
+        payload: { dakenId: report.dakenId },
+      });
+    },
     [connection],
   );
   const { typed, missCount, registerChar } = useTypingJudge({
