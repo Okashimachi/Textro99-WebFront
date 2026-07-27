@@ -1,3 +1,109 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ============================================================================
+ * 見た目テーマ（寿司打×テトリス99）用のアニメーション・装飾。
+ * すべて「表示」だけ。戦闘判定・状態には一切関与しない（docs/rules/01 §3）。
+ * ========================================================================== */
+
+/* コンベアベルトの流れ（右→左）。背景パターンを左へ流して動きを演出。 */
+@keyframes belt-scroll {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: -56px;
+  }
+}
+
+/* 新しい寿司皿（お題）が右から中央へ流れ込む登場アニメ。 */
+@keyframes sushi-slide-in {
+  from {
+    transform: translateX(70%) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 中央お題のふわっと着地。 */
+@keyframes plate-pop {
+  0% {
+    transform: translateY(-6px) scale(0.96);
+  }
+  60% {
+    transform: translateY(2px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 被弾スタックが背景に積み上がる（下からせり上がる）。 */
+@keyframes stack-rise {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 危険域の点滅。 */
+@keyframes danger-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 被弾予告の警告バナー登場。 */
+@keyframes warn-drop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-belt {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.14) 0px,
+    rgba(148, 163, 184, 0.14) 22px,
+    rgba(15, 23, 42, 0) 22px,
+    rgba(15, 23, 42, 0) 56px
+  );
+  animation: belt-scroll 0.9s linear infinite;
+}
+
+.animate-sushi-in {
+  animation: sushi-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-plate-pop {
+  animation: plate-pop 0.3s ease-out;
+}
+
+.animate-stack-rise {
+  animation: stack-rise 0.3s ease-out;
+}
+
+.animate-danger-pulse {
+  animation: danger-pulse 0.8s ease-in-out infinite;
+}
+
+.animate-warn-drop {
+  animation: warn-drop 0.3s ease-out;
+}
