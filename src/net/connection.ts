@@ -95,6 +95,33 @@ export class WsConnection {
     };
   }
 
+  /**
+   * 既存接続を閉じて新しい接続を張り直す。
+   *
+   * サーバーは **WebSocket 接続時にのみマッチング登録** する契約のため（1接続=1試合）、
+   * 試合終了後の再戦には「同じ接続に再参加メッセージを送る」のではなく、
+   * **新しい接続を開く**必要がある。旧ソケットの onclose を無効化してから閉じ、
+   * autoReconnect による二重接続を防ぐ。
+   */
+  reconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    const old = this.ws;
+    this.ws = null;
+    if (old) {
+      // 旧ソケットのハンドラを外し、閉鎖に伴う再接続スケジュールを止める。
+      old.onopen = null;
+      old.onmessage = null;
+      old.onerror = null;
+      old.onclose = null;
+      old.close();
+    }
+    this.setStatus("closed");
+    this.connect();
+  }
+
   /** 明示的に切断する（自動再接続はしない）。 */
   disconnect(): void {
     this.manuallyClosed = true;
