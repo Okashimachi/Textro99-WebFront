@@ -8,18 +8,31 @@ const STRATEGY_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export function StrategySelector({ selectedStrategyId }: Props) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3">
-      <div className="mb-2 text-xs text-slate-400">戦略選択（0-9 キーで送信）</div>
-      <div className="flex flex-wrap gap-1">
+    <div className="rounded-2xl border-2 border-slate-700 bg-slate-800/60 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          作戦
+        </span>
+        <span className="text-[10px] text-slate-500">
+          {selectedStrategyId != null ? (
+            <>
+              選択中 <span className="font-bold text-sky-300">{selectedStrategyId}</span>
+            </>
+          ) : (
+            "0-9 キーで選択"
+          )}
+        </span>
+      </div>
+      <div className="grid grid-cols-10 gap-1">
         {STRATEGY_IDS.map((id) => {
           const active = id === selectedStrategyId;
           return (
             <span
               key={id}
-              className={`flex h-8 w-8 items-center justify-center rounded text-sm font-bold ${
+              className={`flex aspect-square items-center justify-center rounded-lg text-base font-black transition-all ${
                 active
-                  ? "bg-sky-500 text-white"
-                  : "bg-slate-900 text-slate-400"
+                  ? "scale-105 bg-gradient-to-b from-sky-400 to-sky-600 text-white shadow-lg shadow-sky-500/30 ring-2 ring-sky-300"
+                  : "bg-slate-900 text-slate-500 hover:bg-slate-800"
               }`}
             >
               {id}
