@@ -30,10 +30,14 @@ export function App() {
   const [pendingMode, setPendingMode] = useState<PlayMode>("online");
   const [backend, setBackend] = useState<Backend>("server");
   const [status, setStatus] = useState<ConnectionStatus>(connection.status);
+  // 開発ツール（デバッグ行 / 送信ログ / Devモック / RawStateDebugPane）の表示。
+  // OFF にすると本番でプレイヤーが触る画面相当になる（マッチング中に切替可能）。
+  // 手動クリア報告ボタンだけは、この値に関わらず常に表示する。
+  const [showDevTools, setShowDevTools] = useState(true);
 
   const { profile, setDisplayName } = useProfile();
   const { state, lastEnvelope } = useGameState(connection);
-  const { phase, inputActive, actions } = useScreenPhase(state);
+  const { phase, inputActive, actions, startCountdownDeadlineMs } = useScreenPhase(state);
   const [step, setStep] = useState(0);
   const [sentLog, setSentLog] = useState<{ envelope: Envelope; sent: boolean }[]>([]);
 
@@ -158,6 +162,9 @@ export function App() {
         typedPrefix={typed}
         missCount={missCount}
         selfDisplayName={profile.displayName}
+        showDevTools={showDevTools}
+        onToggleDevTools={setShowDevTools}
+        startCountdownDeadlineMs={startCountdownDeadlineMs}
       />
     );
   }
@@ -169,45 +176,55 @@ export function App() {
       <header className="border-b border-slate-700 px-4 py-2">
         <p className="text-xs text-slate-400">
           テキストロ99 / 画面: {stage === "in-game" ? phase : stage}
-          {stage === "in-game" && ` / 接続: ${statusLabel} / 生存: ${state.aliveCount}`}
+          {stage === "in-game" &&
+            showDevTools &&
+            ` / 接続: ${statusLabel} / 生存: ${state.aliveCount}`}
           {profile.displayName && ` / 名前: ${profile.displayName}`}
         </p>
       </header>
 
       <main className="px-4">{body}</main>
 
-      {/* dev: 送信ログ・手動クリア報告・S2C 注入（in-game のみ表示） */}
+      {/*
+        手動クリア報告ボタン。かなお題（例「ねこ」）は直接照合方式で打鍵できないことがあり、
+        その場合の DakenClearReport 疎通用に実発行 dakenId で報告する。
+        ※ これは開発ツール表示（showDevTools）に関わらず in-game 中「常に表示」する。
+      */}
       {stage === "in-game" && (
+        <section className="p-4 text-xs">
+          <button
+            disabled={state.activeDaken.length === 0}
+            onClick={() => {
+              const daken = state.activeDaken[0];
+              if (!daken) return;
+              // onClear 経由で送る（送信＋現在お題の active 除去をまとめて行う）。
+              // connection.send を直接呼ぶと DakenExpired が注入されず、次のお題が
+              // 追加されるだけで先頭が入れ替わらない＝画面上お題が進まないため。
+              onClear({
+                dakenId: daken.dakenId,
+                isMiss: false,
+                missCount: 0,
+                elapsedMs: 0,
+              } satisfies DakenClearReport);
+            }}
+            className="rounded bg-indigo-700 px-2 py-1 text-xs enabled:hover:bg-indigo-600 disabled:opacity-40"
+          >
+            現在のダケンを手動クリア報告（かなお題の疎通用）
+            {state.activeDaken[0]
+              ? ` [${state.activeDaken[0].dakenId} “${state.activeDaken[0].text}”]`
+              : ""}
+          </button>
+        </section>
+      )}
+
+      {/* dev: 送信ログ・S2C 注入・生 state（in-game かつ 開発ツール表示 ON のときのみ） */}
+      {stage === "in-game" && showDevTools && (
         <>
-          <section className="p-4 text-xs">
+          <section className="px-4 pb-4 text-xs">
             <h2 className="mb-1 font-bold text-slate-300">
               入力送信ログ（inputActive: {String(inputActive)} / 戦略:{" "}
               {selectedStrategyId ?? "—"} / 打鍵: {typed || "—"} / ミス: {missCount}）
             </h2>
-            <div className="mb-2">
-              <button
-                disabled={state.activeDaken.length === 0}
-                onClick={() => {
-                  const daken = state.activeDaken[0];
-                  if (!daken) return;
-                  // onClear 経由で送る（送信＋現在お題の active 除去をまとめて行う）。
-                  // connection.send を直接呼ぶと DakenExpired が注入されず、次のお題が
-                  // 追加されるだけで先頭が入れ替わらない＝画面上お題が進まないため。
-                  onClear({
-                    dakenId: daken.dakenId,
-                    isMiss: false,
-                    missCount: 0,
-                    elapsedMs: 0,
-                  } satisfies DakenClearReport);
-                }}
-                className="rounded bg-indigo-700 px-2 py-1 text-xs enabled:hover:bg-indigo-600 disabled:opacity-40"
-              >
-                現在のダケンを手動クリア報告（かなお題の疎通用）
-                {state.activeDaken[0]
-                  ? ` [${state.activeDaken[0].dakenId} “${state.activeDaken[0].text}”]`
-                  : ""}
-              </button>
-            </div>
             <ul className="space-y-0.5 font-mono text-slate-400">
               {sentLog.map((s, i) => (
                 <li key={i}>

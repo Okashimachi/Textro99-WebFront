@@ -27,6 +27,12 @@ interface Props {
   missCount?: number;
   /** 自分の表示名（プロフィール名）。 */
   selfDisplayName?: string;
+  /** 開発ツール（ログ/デバッグ）の表示状態。マッチング中に切替できる。 */
+  showDevTools?: boolean;
+  /** 開発ツールの表示切替。 */
+  onToggleDevTools?: (show: boolean) => void;
+  /** 開始カウントダウンの終了時刻(ms epoch)。マッチング完了直後のみ非 null。 */
+  startCountdownDeadlineMs?: number | null;
 }
 
 export function ScreenRouter({
@@ -38,6 +44,9 @@ export function ScreenRouter({
   typedPrefix,
   missCount,
   selfDisplayName,
+  showDevTools,
+  onToggleDevTools,
+  startCountdownDeadlineMs,
 }: Props) {
   switch (phase) {
     case "title":
@@ -63,6 +72,9 @@ export function ScreenRouter({
             net.leave();
             actions.leaveMatchmaking();
           }}
+          showDevTools={showDevTools}
+          onToggleDevTools={onToggleDevTools}
+          startCountdownDeadlineMs={startCountdownDeadlineMs}
         />
       );
 
