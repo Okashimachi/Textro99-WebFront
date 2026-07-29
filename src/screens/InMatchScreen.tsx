@@ -12,7 +12,7 @@
 //   └──────────────────────────────────────────────────────┘
 //
 // 被弾予告は NEXT のトラップ／被弾ダケン（色で区別）に統合したため専用パネルを持たない。
-// お題の制限時間が残り僅かになると、画面全体を赤くフラッシュさせて警告する（表示のみ）。
+// お題のストック（被弾スタック）が危険域に入ると、画面全体を赤くフラッシュさせて警告する（表示のみ）。
 import type { GameViewModel } from "@/state";
 import { StrategySelector } from "@/components/hud/StrategySelector";
 import { EventLog } from "@/components/hud/EventLog";
@@ -22,6 +22,7 @@ import { NextQueue } from "@/components/hud/NextQueue";
 import { PlayField } from "@/components/hud/PlayField";
 import { PlayerGrid99 } from "@/components/PlayerGrid99";
 import { useDakenTimer } from "@/components/hud/useDakenTimer";
+import { stackLevel } from "@/components/hud/stackLevel";
 
 interface Props {
   state: GameViewModel;
@@ -48,14 +49,16 @@ export function InMatchScreen({
   spectating = false,
   devTools,
 }: Props) {
-  // 残り時間は主ディスプレイと画面全体の警告で基準を揃えるため、ここで1回だけ計算する。
+  // 残り時間（主ディスプレイの帯）。時間切れの確定はサーバー権威。
   const timer = useDakenTimer(state.activeDaken[0]);
+  // ストックが満杯に近い＝ゲームオーバーが近い。画面全体で警告する。
+  const stackDanger = stackLevel(state.dakenStack) === "danger";
 
   return (
     // 1画面ぶんの高さを使い切る（ヘッダ約 2.5rem ぶんを差し引く）。
     <div className="mx-auto flex min-h-[calc(100vh-2.75rem)] max-w-[1280px] flex-col gap-2 py-2">
-      {/* 残り時間の警告: 画面全体をフラッシュさせる（クリックは透過・表示のみ） */}
-      {timer.danger && !spectating && (
+      {/* ストックが危険域: 画面全体をフラッシュさせる（クリックは透過・表示のみ） */}
+      {stackDanger && !spectating && (
         <div
           aria-hidden
           className="animate-screen-alert pointer-events-none fixed inset-0 z-50"

@@ -98,22 +98,7 @@ html {
   animation: value-bump 0.32s ease-out;
 }
 
-/* ストックが危険域に入ったときの警告。背景ではなく前景（お題の札）をゆっくり点滅させる。 */
-@keyframes fg-alert {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-
-.animate-fg-alert {
-  animation: fg-alert 1.8s ease-in-out infinite;
-}
-
-/* お題の残り時間が僅かなときの、画面全体の警告フラッシュ（内側からの赤いにじみ）。
+/* お題のストック（被弾スタック）が危険域のときの、画面全体の警告フラッシュ。
    内容の可読性を落とさないよう、中央は薄く縁だけを強く光らせる。 */
 @keyframes screen-alert {
   0%,

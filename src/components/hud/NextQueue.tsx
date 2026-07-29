@@ -4,7 +4,7 @@
 // 兼ねる役割:
 //   ・次に何が来るかの先読み（ひらがなだけをコンパクトに縦積み。次の1件だけ2倍の高さで強調）。
 //   ・被弾でどれくらい溜まっているか＝あと何枠でゲームオーバーかの可視化。
-//     溜まり具合は「窓全体の地色」で示し、危険域では前景（お題の札）をゆっくり点滅させる。
+//     溜まり具合は「窓全体の地色」で示す（危険域では画面全体がフラッシュする＝InMatchScreen 側）。
 //
 // 種別は色で区別する（通常=黒 / 被弾=琥珀 / トラップ=赤）。ラベル・Lv・ローマ字は出さない。
 // 入力は DTO と ViewModel のみ。判定・戦闘数値の算出はしない（docs/rules/01 §3）。
@@ -12,6 +12,7 @@
 import type { DakenInstance } from "@/proto/types";
 import type { DakenStackState } from "@/state";
 import { Panel } from "./Panel";
+import { stackLevel } from "./stackLevel";
 
 interface Props {
   /** 現在のお題を含む出題列（先頭＝現在。先頭は主ディスプレイ側で出す）。 */
@@ -34,11 +35,11 @@ export function NextQueue({ activeDaken, dakenStack, limit = 12 }: Props) {
 
   const { count, limit: stackLimit, trapPending } = dakenStack;
   const remain = stackLimit > 0 ? Math.max(0, stackLimit - count) : null;
-  const ratio = stackLimit > 0 ? Math.min(1, count / stackLimit) : 0;
-  const danger = ratio >= 0.85;
-  const warn = ratio >= 0.6;
+  const level = stackLevel(dakenStack);
+  const danger = level === "danger";
+  const warn = level === "warn";
 
-  // 溜まり具合＝窓全体の地色（静止）。危険域は前景（札）を点滅させて知らせる。
+  // 溜まり具合＝窓全体の地色（静止）。危険域の点滅は画面全体で行う。
   const windowTone = danger ? "bg-red-100" : warn ? "bg-amber-50" : "bg-white";
   const remainColor = danger
     ? "text-red-600"
@@ -88,7 +89,7 @@ export function NextQueue({ activeDaken, dakenStack, limit = 12 }: Props) {
                 isNext
                   ? "h-16 border-2 text-2xl shadow-sm"
                   : "h-9 text-lg"
-              } ${danger ? "animate-fg-alert" : ""}`}
+              }`}
             >
               {d.text}
             </div>
