@@ -29,31 +29,6 @@ const WORDS = [
 /** かなお題をランダムに1件返す（dev ツールからも使う）。 */
 export const randomWord = () => WORDS[Math.floor(Math.random() * WORDS.length)];
 
-/** 模擬サーバーが出すお題の制限時間。実サーバーはお題ごとに固有値を送る。 */
-export const MOCK_TIME_LIMIT_MS = 8_000;
-
-let mockSeq = 0;
-
-/**
- * 模擬サーバーのお題を1件つくる（dev ツール・時間切れ補充からも使う）。
- * 種別ごとの色分け（通常/被弾/トラップ）を確認できるよう、数件に1件だけ被弾・トラップを混ぜる。
- */
-export function createMockDaken(
-  timeLimitMs: number = MOCK_TIME_LIMIT_MS,
-): DakenInstance {
-  mockSeq += 1;
-  const type: DakenInstance["type"] =
-    mockSeq % 7 === 0 ? "Trap" : mockSeq % 3 === 0 ? "EnemySent" : "Normal";
-  return {
-    dakenId: `mock-${mockSeq}`,
-    type,
-    text: randomWord(),
-    difficultyLevel: 0,
-    timeLimitMs,
-    issuedAtServerTimeMs: Date.now(),
-  };
-}
-
 export interface MockServerOptions {
   /** 自分の表示上の playerId。 */
   selfId?: string;
@@ -70,13 +45,28 @@ export function startMockServer(
 ): () => void {
   const selfId = options.selfId ?? "you";
   let stopped = false;
+  let seq = 0;
   let combo = 0;
 
   const recv = (type: MessageType, payload: unknown) => {
     if (!stopped) connection.simulateReceive({ type, payload } as Envelope);
   };
 
-  const nextDaken = () => createMockDaken();
+  // 練習モードでも種別ごとの色分け（通常/被弾/トラップ）を確認できるよう、
+  // 数件に1件だけ被弾・トラップを混ぜる（開発用スタブの見た目確認用）。
+  const nextDaken = (): DakenInstance => {
+    seq += 1;
+    const type: DakenInstance["type"] =
+      seq % 7 === 0 ? "Trap" : seq % 3 === 0 ? "EnemySent" : "Normal";
+    return {
+      dakenId: `mock-${seq}`,
+      type,
+      text: randomWord(),
+      difficultyLevel: 0,
+      timeLimitMs: 999_999, // ローカルテストでは時間切れさせない
+      issuedAtServerTimeMs: Date.now(),
+    };
+  };
 
   const self: PlayerSummary = {
     playerId: selfId,
