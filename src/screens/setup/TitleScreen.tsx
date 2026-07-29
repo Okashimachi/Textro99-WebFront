@@ -7,12 +7,12 @@ export function TitleScreen({ onStart }: Props) {
   return (
     <div className="flex flex-col items-center gap-8 py-20">
       <div className="text-center">
-        <h1 className="text-5xl font-black tracking-tight text-accent">テキストロ99</h1>
-        <p className="mt-2 text-sub">99人バトルロイヤル・タイピング</p>
+        <h1 className="text-5xl font-black tracking-tight text-red-600">テキストロ99</h1>
+        <p className="mt-2 text-zinc-500">99人バトルロイヤル・タイピング</p>
       </div>
       <button
         onClick={onStart}
-        className="border border-accent-dark bg-accent px-10 py-3 text-lg font-bold text-white hover:bg-accent-dark"
+        className="border border-red-700 bg-red-600 px-10 py-3 text-lg font-bold text-white hover:bg-red-700"
       >
         はじめる
       </button>

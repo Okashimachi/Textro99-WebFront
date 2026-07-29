@@ -172,10 +172,10 @@ export function App() {
   const statusLabel = backend === "mock" ? "フロント完結（ローカル）" : status;
 
   return (
-    <div className="min-h-screen bg-paper font-hud text-ink">
-      <header className="flex items-center gap-2 border-b border-line bg-panel px-3 py-1.5">
-        <span className="text-xs font-black tracking-wide text-accent">テキストロ99</span>
-        <p className="text-[11px] text-sub">
+    <div className="min-h-screen bg-zinc-100 text-zinc-900">
+      <header className="flex items-center gap-2 border-b border-zinc-300 bg-white px-3 py-1.5">
+        <span className="text-xs font-black tracking-wide text-red-600">テキストロ99</span>
+        <p className="text-[11px] text-zinc-500">
           画面: {stage === "in-game" ? phase : stage}
           {stage === "in-game" &&
             showDevTools &&
@@ -208,7 +208,7 @@ export function App() {
                 elapsedMs: 0,
               } satisfies DakenClearReport);
             }}
-            className="border border-line bg-panel px-2 py-1 text-xs enabled:hover:bg-head disabled:opacity-40"
+            className="border border-zinc-300 bg-white px-2 py-1 text-xs enabled:hover:bg-zinc-100 disabled:opacity-40"
           >
             現在のダケンを手動クリア報告（かなお題の疎通用）
             {state.activeDaken[0]
@@ -222,11 +222,11 @@ export function App() {
       {stage === "in-game" && showDevTools && (
         <>
           <section className="px-4 pb-4 text-xs">
-            <h2 className="mb-1 font-bold text-ink">
+            <h2 className="mb-1 font-bold text-zinc-900">
               入力送信ログ（inputActive: {String(inputActive)} / 戦略:{" "}
               {selectedStrategyId ?? "—"} / 打鍵: {typed || "—"} / ミス: {missCount}）
             </h2>
-            <ul className="space-y-0.5 font-mono text-sub">
+            <ul className="space-y-0.5 font-mono text-zinc-500">
               {sentLog.map((s, i) => (
                 <li key={i}>
                   {s.sent ? "→" : "×"} {s.envelope.type} {JSON.stringify(s.envelope.payload)}
@@ -236,7 +236,7 @@ export function App() {
           </section>
 
           <section className="p-4">
-            <h2 className="mb-2 text-sm font-bold text-ink">
+            <h2 className="mb-2 text-sm font-bold text-zinc-900">
               Dev モック（S2C 手動注入・単体検証）
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -248,7 +248,7 @@ export function App() {
                     setStep(i + 1);
                   }}
                   className={`px-2 py-1 text-xs ${
-                    i < step ? "border border-accent-dark bg-accent text-white" : "border border-line bg-panel hover:bg-head"
+                    i < step ? "border border-red-700 bg-red-600 text-white" : "border border-zinc-300 bg-white hover:bg-zinc-100"
                   }`}
                 >
                   {i + 1}. {m.label}

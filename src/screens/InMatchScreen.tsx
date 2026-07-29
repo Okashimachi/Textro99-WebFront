@@ -40,11 +40,11 @@ export function InMatchScreen({
   spectating = false,
 }: Props) {
   return (
-    <div className="mx-auto max-w-[1180px] space-y-2 py-2 font-hud">
+    <div className="mx-auto max-w-[1180px] space-y-2 py-2">
       <MatchStatusBar state={state} selfDisplayName={selfDisplayName} />
 
       {spectating && (
-        <div className="border border-accent bg-accent-soft px-3 py-1.5 text-center text-xs font-bold text-accent-dark">
+        <div className="border border-red-500 bg-red-50 px-3 py-1.5 text-center text-xs font-bold text-red-800">
           観戦モード（あなたは脱落済み・操作は無効）
         </div>
       )}

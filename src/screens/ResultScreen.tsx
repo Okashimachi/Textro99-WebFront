@@ -21,13 +21,13 @@ export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
   return (
     <div className="flex flex-col items-center gap-6 py-12">
       <div
-        className={`text-center ${isWin ? "text-accent" : "text-ink"}`}
+        className={`text-center ${isWin ? "text-red-600" : "text-zinc-900"}`}
       >
-        <div className="text-sm uppercase tracking-widest text-sub">Result</div>
+        <div className="text-sm uppercase tracking-widest text-zinc-500">Result</div>
         <div className="mt-1 text-6xl font-black">
           {isWin ? "優勝！" : `${result.rank} 位`}
         </div>
-        {!isWin && <div className="mt-1 text-sub">脱落しました</div>}
+        {!isWin && <div className="mt-1 text-zinc-500">脱落しました</div>}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -44,13 +44,13 @@ export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
       <div className="flex gap-3">
         <button
           onClick={onRematch}
-          className="border border-accent-dark bg-accent px-6 py-2 font-bold text-white hover:bg-accent-dark"
+          className="border border-red-700 bg-red-600 px-6 py-2 font-bold text-white hover:bg-red-700"
         >
           再マッチング
         </button>
         <button
           onClick={onBackToTitle}
-          className="border border-line bg-panel px-6 py-2 hover:bg-head"
+          className="border border-zinc-300 bg-white px-6 py-2 hover:bg-zinc-100"
         >
           タイトルへ
         </button>
@@ -61,8 +61,8 @@ export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-line bg-panel px-4 py-3 text-center">
-      <div className="text-xs text-sub">{label}</div>
+    <div className="border border-zinc-300 bg-white px-4 py-3 text-center">
+      <div className="text-xs text-zinc-500">{label}</div>
       <div className="mt-0.5 text-2xl font-bold tabular-nums">{value}</div>
     </div>
   );

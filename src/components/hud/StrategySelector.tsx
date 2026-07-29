@@ -12,6 +12,7 @@ export function StrategySelector({ selectedStrategyId }: Props) {
   return (
     <Panel
       label="作戦"
+      tone="info"
       right={
         selectedStrategyId != null ? `選択中 ${selectedStrategyId}` : "0-9 キーで選択"
       }
@@ -25,8 +26,8 @@ export function StrategySelector({ selectedStrategyId }: Props) {
               key={id}
               className={`flex h-8 items-center justify-center border text-sm font-black tabular-nums ${
                 active
-                  ? "border-accent-dark bg-accent text-white"
-                  : "border-line bg-panel text-sub"
+                  ? "border-sky-700 bg-sky-600 text-white"
+                  : "border-zinc-300 bg-white text-zinc-500"
               }`}
             >
               {id}

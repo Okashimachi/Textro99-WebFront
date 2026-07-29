@@ -34,23 +34,23 @@ export function NameEntryScreen({ initialName, actionLabel, onSubmit, onBack }: 
         maxLength={MAX}
         onChange={(e) => setName(e.target.value)}
         placeholder="名前を入力"
-        className="border border-line bg-panel px-4 py-3 text-lg outline-none focus:border-accent"
+        className="border border-zinc-300 bg-white px-4 py-3 text-lg outline-none focus:border-red-500"
       />
-      <div className="text-right text-xs text-sub">
+      <div className="text-right text-xs text-zinc-500">
         {trimmed.length}/{MAX}
       </div>
 
       <button
         type="submit"
         disabled={!canStart}
-        className="border border-accent-dark bg-accent px-6 py-3 font-bold text-white enabled:hover:bg-accent-dark disabled:opacity-40"
+        className="border border-red-700 bg-red-600 px-6 py-3 font-bold text-white enabled:hover:bg-red-700 disabled:opacity-40"
       >
         {actionLabel}
       </button>
       <button
         type="button"
         onClick={onBack}
-        className="text-sm text-sub hover:text-ink"
+        className="text-sm text-zinc-500 hover:text-zinc-900"
       >
         ← 戻る
       </button>

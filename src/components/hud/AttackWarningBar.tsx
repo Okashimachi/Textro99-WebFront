@@ -27,7 +27,7 @@ export function AttackWarningBar({ incomingAttacks }: Props) {
   return (
     <Panel label="IN — 被弾予告" tone="accent" right={`予告 ${sorted.length}`}>
       {sorted.length === 0 ? (
-        <div className="py-2 text-[11px] text-sub">飛来中の攻撃はありません</div>
+        <div className="py-2 text-[11px] text-zinc-500">飛来中の攻撃はありません</div>
       ) : (
         <ul className="space-y-1">
           {sorted.map((a, i) => {
@@ -38,27 +38,27 @@ export function AttackWarningBar({ incomingAttacks }: Props) {
                 key={`${a.warningId}-${a.receivedAtMs}-${i}`}
                 className={`animate-warn-drop border px-2 py-1 ${
                   urgent
-                    ? "animate-danger-pulse border-accent bg-accent-soft"
-                    : "border-line bg-panel"
+                    ? "animate-danger-pulse border-red-500 bg-red-50"
+                    : "border-zinc-300 bg-white"
                 }`}
               >
                 <div className="flex items-baseline gap-1">
                   <span
                     className={`text-2xl font-black leading-none tabular-nums ${
-                      urgent ? "text-accent" : "text-ink"
+                      urgent ? "text-red-600" : "text-zinc-900"
                     }`}
                   >
                     {(remainMs / 1000).toFixed(1)}
                   </span>
-                  <span className="text-[10px] text-sub">秒</span>
-                  <span className="ml-auto truncate text-[10px] text-sub">
+                  <span className="text-[10px] text-zinc-500">秒</span>
+                  <span className="ml-auto truncate text-[10px] text-zinc-500">
                     {a.attackerId} / 威力 {a.power}
                   </span>
                 </div>
                 {/* 威力バー（予告どうしの相対比較・表示専用） */}
-                <div className="mt-1 h-1.5 w-full bg-head">
+                <div className="mt-1 h-1.5 w-full bg-zinc-100">
                   <div
-                    className="h-full bg-accent"
+                    className="h-full bg-red-600"
                     style={{ width: `${(a.power / maxPower) * 100}%` }}
                   />
                 </div>

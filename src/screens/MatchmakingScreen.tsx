@@ -49,28 +49,28 @@ export function MatchmakingScreen({
       </h2>
 
       {starting ? (
-        <div className="border-2 border-accent bg-panel px-12 py-8 text-center">
-          <div className="text-7xl font-black tabular-nums text-accent">
+        <div className="border-2 border-red-500 bg-white px-12 py-8 text-center">
+          <div className="text-7xl font-black tabular-nums text-red-600">
             {Math.ceil(startRemainMs! / 1000)}
           </div>
-          <div className="mt-2 text-sm text-sub">スタートまで</div>
+          <div className="mt-2 text-sm text-zinc-500">スタートまで</div>
         </div>
       ) : (
-        <div className="border border-line bg-panel px-8 py-6 text-center">
-          <div className="text-5xl font-black tabular-nums text-accent">
+        <div className="border border-zinc-300 bg-white px-8 py-6 text-center">
+          <div className="text-5xl font-black tabular-nums text-red-600">
             {status?.waitingCount ?? 0}
           </div>
-          <div className="mt-1 text-sm text-sub">
+          <div className="mt-1 text-sm text-zinc-500">
             待機人数（最少 {status?.minPlayers ?? "—"} 人）
           </div>
 
           {remainMs != null && (
-            <div className="mt-4 text-2xl font-bold text-ink tabular-nums">
+            <div className="mt-4 text-2xl font-bold text-zinc-900 tabular-nums">
               開始まで {(remainMs / 1000).toFixed(1)}s
             </div>
           )}
           {remainMs == null && (
-            <div className="mt-4 text-sm text-sub">プレイヤーを待っています…</div>
+            <div className="mt-4 text-sm text-zinc-500">プレイヤーを待っています…</div>
           )}
         </div>
       )}
@@ -78,14 +78,14 @@ export function MatchmakingScreen({
       {!starting && (
         <button
           onClick={onLeave}
-          className="border border-line bg-panel px-4 py-2 hover:bg-head"
+          className="border border-zinc-300 bg-white px-4 py-2 hover:bg-zinc-100"
         >
           マッチングを離脱
         </button>
       )}
 
       {onToggleDevTools && (
-        <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-sub">
+        <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-zinc-500">
           <input
             type="checkbox"
             checked={showDevTools ?? true}

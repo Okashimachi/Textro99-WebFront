@@ -21,21 +21,23 @@ export function ComboGauge({ combo }: Props) {
       tone="accent"
       right={hot ? "MAX" : `${filled} / ${GAUGE_FULL}`}
     >
-      <div className="text-[10px] tracking-wide text-sub">攻撃力（コンボ）</div>
+      <div className="text-[10px] tracking-wide text-zinc-500">攻撃力（コンボ）</div>
       <div className="flex items-baseline gap-2">
         <span
           key={combo.value}
-          className="animate-value-bump text-5xl font-black leading-none tabular-nums text-accent"
+          className={`animate-value-bump text-5xl font-black leading-none tabular-nums ${
+            hot ? "text-amber-500" : "text-red-600"
+          }`}
         >
           {combo.value}
         </span>
         {hot && (
-          <span className="border border-accent px-1 text-[10px] font-bold text-accent">
+          <span className="border border-amber-500 bg-amber-100 px-1 text-[10px] font-bold text-amber-700">
             MAX
           </span>
         )}
         {combo.lastReason && (
-          <span className="ml-auto text-right text-[11px] leading-tight text-sub">
+          <span className="ml-auto text-right text-[11px] leading-tight text-zinc-500">
             <span className="tabular-nums">
               {combo.lastDelta >= 0 ? `+${combo.lastDelta}` : combo.lastDelta}
             </span>
@@ -50,7 +52,11 @@ export function ComboGauge({ combo }: Props) {
           <span
             key={i}
             className={`h-5 flex-1 border ${
-              i < filled ? "border-accent-dark bg-accent" : "border-line bg-accent-soft"
+              i < filled
+                ? hot
+                  ? "border-amber-500 bg-amber-400"
+                  : "border-red-700 bg-red-600"
+                : "border-zinc-300 bg-zinc-100"
             }`}
           />
         ))}
@@ -59,8 +65,8 @@ export function ComboGauge({ combo }: Props) {
       <div
         className={`mt-2 flex items-center gap-2 border px-2 py-1 text-[11px] ${
           hot
-            ? "animate-danger-pulse border-accent bg-accent-soft text-accent-dark"
-            : "border-line text-sub"
+            ? "animate-danger-pulse border-amber-500 bg-amber-50 text-amber-800"
+            : "border-zinc-300 text-zinc-500"
         }`}
       >
         <span aria-hidden>⏎</span>

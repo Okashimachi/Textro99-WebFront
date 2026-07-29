@@ -53,10 +53,10 @@ export function ScreenRouter({
       // 実タイトルは setup フロー（App）が持つ。ここに来るのは接続〜MatchStart 待ちの間。
       return (
         <Placeholder title="接続中…">
-          <p className="text-sm text-sub">サーバーに接続しています（起動に数秒かかることがあります）</p>
+          <p className="text-sm text-zinc-500">サーバーに接続しています（起動に数秒かかることがあります）</p>
           <button
             onClick={actions.backToTitle}
-            className="border border-line bg-panel px-4 py-2 text-sm hover:bg-head"
+            className="border border-zinc-300 bg-white px-4 py-2 text-sm hover:bg-zinc-100"
           >
             キャンセル
           </button>
