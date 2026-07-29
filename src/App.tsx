@@ -19,6 +19,7 @@ import { useTypingJudge } from "@/typing";
 import { useProfile } from "@/profile";
 import { startMockServer } from "@/dev/mockServer";
 import { InMatchDevTools } from "@/dev/InMatchDevTools";
+import { useMockDakenExpiry } from "@/dev/useMockDakenExpiry";
 import { RawStateDebugPane } from "@/components/RawStateDebugPane";
 import { MOCK_SEQUENCE } from "@/dev/mockMessages";
 
@@ -75,6 +76,13 @@ export function App() {
     daken: state.activeDaken[0],
     active: inputActive,
     onClear,
+  });
+
+  // 練習モードのみ: 制限時間切れをサーバーの代わりに流す（オンラインではサーバーが送る）。
+  useMockDakenExpiry({
+    connection,
+    activeDaken: state.activeDaken,
+    enabled: backend === "mock" && stage === "in-game",
   });
 
   const { selectedStrategyId } = useInputController({
