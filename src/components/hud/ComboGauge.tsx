@@ -1,78 +1,45 @@
-// ComboGauge — 「OUT（自分の攻撃）」パネル。コンボ値＝攻撃の原資をブロック段で見せる。
+// ComboGauge — 攻撃力（コンボ）を円形バッジで示す。主ディスプレイの右下に重ねて使う。
 // 値はサーバー由来（ComboUpdated）。ローカル算出しない（docs/rules/01 §3）。
-// 表示方針: 大きな数値＋10段ブロックで「どれだけ溜まっているか」を一目で読ませる。
+// 表示方針: 打鍵中も視線を動かさずに済むよう、お題のすぐ脇で数字だけを大きく見せる。
 import type { ComboState } from "@/state";
-import { Panel } from "./Panel";
 
 interface Props {
   combo: ComboState;
 }
 
-// ブロック段数（表示だけ。戦闘の閾値ではない）。
+// 満タン扱いの目安（表示だけ。戦闘の閾値ではない）。
 const GAUGE_FULL = 10;
 
 export function ComboGauge({ combo }: Props) {
-  const filled = Math.min(combo.value, GAUGE_FULL);
   const hot = combo.value >= GAUGE_FULL;
 
   return (
-    <Panel
-      label="OUT — 自分の攻撃"
-      tone="accent"
-      right={hot ? "MAX" : `${filled} / ${GAUGE_FULL}`}
+    <div
+      className={`flex h-20 w-20 flex-col items-center justify-center rounded-full border-4 shadow-sm ${
+        hot
+          ? "animate-danger-pulse border-amber-500 bg-amber-100"
+          : "border-red-500 bg-white"
+      }`}
+      title={`攻撃力（コンボ）${combo.value}${combo.lastReason ? ` / ${combo.lastReason}` : ""}`}
     >
-      <div className="text-[10px] tracking-wide text-zinc-500">攻撃力（コンボ）</div>
-      <div className="flex items-baseline gap-2">
-        <span
-          key={combo.value}
-          className={`animate-value-bump text-4xl font-black leading-none tabular-nums ${
-            hot ? "text-amber-500" : "text-red-600"
-          }`}
-        >
-          {combo.value}
-        </span>
-        {hot && (
-          <span className="border border-amber-500 bg-amber-100 px-1 text-[10px] font-bold text-amber-700">
-            MAX
-          </span>
-        )}
-        {combo.lastReason && (
-          <span className="ml-auto text-right text-[11px] leading-tight text-zinc-500">
-            <span className="tabular-nums">
-              {combo.lastDelta >= 0 ? `+${combo.lastDelta}` : combo.lastDelta}
-            </span>
-            <span className="ml-1">（{combo.lastReason}）</span>
-          </span>
-        )}
-      </div>
-
-      {/* 10段ブロック */}
-      <div className="mt-2 flex gap-px">
-        {Array.from({ length: GAUGE_FULL }).map((_, i) => (
-          <span
-            key={i}
-            className={`h-4 flex-1 border ${
-              i < filled
-                ? hot
-                  ? "border-amber-500 bg-amber-400"
-                  : "border-red-700 bg-red-600"
-                : "border-zinc-300 bg-zinc-100"
-            }`}
-          />
-        ))}
-      </div>
-
-      <div
-        className={`mt-2 flex items-center gap-2 border px-2 py-1 text-[11px] ${
-          hot
-            ? "animate-danger-pulse border-amber-500 bg-amber-50 text-amber-800"
-            : "border-zinc-300 text-zinc-500"
+      <span className="text-[9px] font-bold leading-none tracking-wide text-zinc-500">
+        攻撃力
+      </span>
+      <span
+        key={combo.value}
+        className={`animate-value-bump text-3xl font-black leading-none tabular-nums ${
+          hot ? "text-amber-600" : "text-red-600"
         }`}
       >
-        <span aria-hidden>⏎</span>
-        <span className="font-bold">Enter で攻撃発射</span>
-        <span className="ml-auto tabular-nums">威力 {combo.value}</span>
-      </div>
-    </Panel>
+        {combo.value}
+      </span>
+      <span
+        className={`text-[9px] font-bold leading-none ${
+          hot ? "text-amber-600" : "text-zinc-400"
+        }`}
+      >
+        {hot ? "MAX" : "⏎ 攻撃"}
+      </span>
+    </div>
   );
 }

@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* HUD は明色テーマ固定。OS のダークモードでスクロール余白が黒くならないようにする。 */
+html {
+  color-scheme: light;
+  background-color: #f4f4f5;
+}
+
 /* ============================================================================
  * ゲーム HUD 用のアニメーション・装飾（表示のみ・戦闘判定には一切関与しない）。
  * docs/rules/01 §3。
