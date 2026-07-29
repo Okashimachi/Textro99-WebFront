@@ -172,6 +172,7 @@ export function App() {
             <InMatchDevTools
               connection={connection}
               activeDaken={state.activeDaken}
+              dakenStack={state.dakenStack}
               comboValue={state.combo.value}
               onManualClear={onClear}
             />

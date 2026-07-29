@@ -2,6 +2,9 @@
 // PlayField — 主ディスプレイ。いま打つお題だけを最大サイズで見せる。
 //
 // レイアウト:
+//   ・上端: 制限時間の残り（サーバーの timeLimitMs を基準にした表示用カウントダウン）。
+//     残り僅かになると琥珀→赤で警告する。**時間切れの確定はサーバー権威**（DakenExpired）で、
+//     ここでは一切判定しない（バーが 0 になっても勝手にお題を消さない）。
 //   ・中央: 現在のお題（打鍵済みは緑＝確定、残りは黒）とローマ字ヒント。
 //   ・下端: 打鍵の進捗バー。
 //   ・右下: 攻撃力（ComboGauge・円形バッジ）を重ねる。
@@ -10,11 +13,13 @@
 // 入力は ViewModel の値と表示用の打鍵経過のみ。判定・戦闘数値の算出は一切しない
 // （docs/rules/01 §3。判定は #8 TypingJudge、戦闘値はサーバー権威）。
 // ============================================================================
+import { useRef } from "react";
 import type { DakenInstance } from "@/proto/types";
 import type { ComboState, DifficultyState } from "@/state";
 import { romajiHint } from "@/typing/romaji";
 import { ComboGauge } from "./ComboGauge";
 import { Panel } from "./Panel";
+import { useNow } from "./useNow";
 
 interface Props {
   activeDaken: DakenInstance[];
@@ -29,6 +34,9 @@ interface Props {
   /** 外側パネルの追加クラス（高さの引き伸ばし用）。 */
   className?: string;
 }
+
+// この値より長い制限時間は「実質無制限」とみなして残り時間を出さない（練習用スタブ対策）。
+const TIMER_VISIBLE_MAX_MS = 60_000;
 
 // 種別ごとの盤面の縁色（NEXT と同じ意味づけ: 通常=青 / 被弾=琥珀 / トラップ=赤）。
 const TYPE_FRAME: Record<DakenInstance["type"], string> = {
@@ -45,7 +53,23 @@ export function PlayField({
   missCount = 0,
   className = "",
 }: Props) {
+  const now = useNow(100);
   const current = activeDaken[0];
+
+  // 残り時間の基準はお題が画面に出た時刻（表示専用）。サーバーの単調時刻とは突き合わせない。
+  const seenRef = useRef<{ dakenId: string; atMs: number } | null>(null);
+  if (current && seenRef.current?.dakenId !== current.dakenId) {
+    seenRef.current = { dakenId: current.dakenId, atMs: Date.now() };
+  }
+  const limitMs = current?.timeLimitMs ?? 0;
+  const showTimer = !!current && limitMs > 0 && limitMs <= TIMER_VISIBLE_MAX_MS;
+  const remainMs = showTimer
+    ? Math.max(0, limitMs - (now - (seenRef.current?.atMs ?? now)))
+    : 0;
+  const timeRatio = showTimer && limitMs > 0 ? remainMs / limitMs : 1;
+  const timeDanger = showTimer && timeRatio <= 0.25;
+  const timeWarn = showTimer && timeRatio <= 0.5;
+
   const matched = current && current.text.startsWith(typedPrefix) ? typedPrefix.length : 0;
   const total = current?.text.length ?? 0;
   const progress = total > 0 ? (matched / total) * 100 : 0;
@@ -63,9 +87,41 @@ export function PlayField({
       className={className}
       bodyClassName="flex min-h-0 flex-col p-3"
     >
+      {/* 制限時間の警告（表示専用・時間切れの確定はサーバー） */}
+      {showTimer && (
+        <div className={`mb-2 shrink-0 ${timeDanger ? "animate-danger-pulse" : ""}`}>
+          <div className="flex items-baseline justify-between text-[10px]">
+            <span className="text-zinc-500">残り時間</span>
+            <span
+              className={`font-black tabular-nums ${
+                timeDanger
+                  ? "text-red-600"
+                  : timeWarn
+                    ? "text-amber-600"
+                    : "text-zinc-600"
+              }`}
+            >
+              {(remainMs / 1000).toFixed(1)}秒
+            </span>
+          </div>
+          <div className="h-2 w-full bg-zinc-100">
+            <div
+              className={`h-full transition-[width] duration-100 ${
+                timeDanger ? "bg-red-500" : timeWarn ? "bg-amber-400" : "bg-sky-500"
+              }`}
+              style={{ width: `${timeRatio * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div
         className={`relative flex min-h-[200px] flex-1 flex-col items-center justify-center border-2 px-4 py-6 text-center ${
-          current ? TYPE_FRAME[current.type] : "border-zinc-200 bg-zinc-50"
+          timeDanger
+            ? "border-red-500 bg-red-50"
+            : current
+              ? TYPE_FRAME[current.type]
+              : "border-zinc-200 bg-zinc-50"
         }`}
       >
         {current ? (

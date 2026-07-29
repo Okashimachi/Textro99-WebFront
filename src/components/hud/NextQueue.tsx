@@ -32,7 +32,7 @@ const TYPE_LOOK: Record<DakenInstance["type"], string> = {
 export function NextQueue({ activeDaken, dakenStack, limit = 12 }: Props) {
   const upcoming = activeDaken.slice(1, 1 + limit);
 
-  const { count, limit: stackLimit } = dakenStack;
+  const { count, limit: stackLimit, trapPending } = dakenStack;
   const remain = stackLimit > 0 ? Math.max(0, stackLimit - count) : null;
   const ratio = stackLimit > 0 ? Math.min(1, count / stackLimit) : 0;
   const danger = ratio >= 0.85;
@@ -52,14 +52,22 @@ export function NextQueue({ activeDaken, dakenStack, limit = 12 }: Props) {
       tone="info"
       className="h-full"
       right={
-        remain != null ? (
-          <span>
-            あと <span className={`text-sm font-black ${remainColor}`}>{remain}</span>{" "}
-            でゲームオーバー
-          </span>
-        ) : (
-          `${upcoming.length} 件`
-        )
+        <span className="flex items-center gap-2">
+          {trapPending && (
+            <span className="animate-danger-pulse border border-red-500 bg-red-100 px-1 font-bold text-red-700">
+              💣 誘発待ち
+            </span>
+          )}
+          {remain != null ? (
+            <span>
+              あと{" "}
+              <span className={`text-sm font-black ${remainColor}`}>{remain}</span>{" "}
+              でゲームオーバー
+            </span>
+          ) : (
+            <span>{upcoming.length} 件</span>
+          )}
+        </span>
       }
       bodyClassName={`flex flex-col gap-1 overflow-hidden p-2 transition-colors ${windowTone}`}
     >

@@ -3,6 +3,9 @@
 //
 // 試合画面ヘッダーの右側に置き、模擬サーバー相手に状況を手で作れるようにする。
 //   ・ダケンを1つ自分に与える（通常 / トラップ）
+//   ・出題キューを空にして短い制限時間のお題を出す（残り時間の警告表示の確認）
+//   ・現在のお題を時間切れにする（DakenExpired）
+//   ・トラップ失敗のペナルティを再現（スタック増加＋被弾ダケン発行）
 //   ・現在のお題を手動でクリア報告（かなお題の疎通確認用）
 //   ・攻撃力（コンボ）を任意の値に設定
 //
@@ -16,12 +19,15 @@ import {
   type DakenClearReport,
 } from "@/proto/types";
 import type { WsConnection } from "@/net";
+import type { DakenStackState } from "@/state";
 import { randomWord } from "./mockServer";
 
 interface Props {
   connection: WsConnection;
   /** 現在の出題列（先頭＝クリア報告の対象）。 */
   activeDaken: DakenInstance[];
+  /** 現在の被弾スタック（ペナルティ再現時の増分計算に使う）。 */
+  dakenStack: DakenStackState;
   /** 現在の攻撃力（コンボ）。入力欄の初期値・差分計算に使う。 */
   comboValue: number;
   /** 手動クリア報告（App の onClear をそのまま渡す）。 */
@@ -30,31 +36,102 @@ interface Props {
 
 let devSeq = 0;
 
+// トラップ失敗のペナルティで積む被弾ダケンの数（練習用の目安。正典はサーバー）。
+const TRAP_PENALTY_DAKEN = 2;
+
 export function InMatchDevTools({
   connection,
   activeDaken,
+  dakenStack,
   comboValue,
   onManualClear,
 }: Props) {
   const [comboInput, setComboInput] = useState("");
   const current = activeDaken[0];
 
-  /** 自分に対してダケンを1つ発行する（S2C DakenIssued を注入）。 */
-  const giveDaken = (type: DakenInstance["type"]) => {
+  /** dev 用のダケンを1件つくる。 */
+  const makeDaken = (
+    type: DakenInstance["type"],
+    timeLimitMs = 999_999,
+  ): DakenInstance => {
     devSeq += 1;
+    return {
+      dakenId: `dev-${devSeq}`,
+      type,
+      text: randomWord(),
+      difficultyLevel: 0,
+      timeLimitMs,
+      issuedAtServerTimeMs: Date.now(),
+    };
+  };
+
+  /** 自分に対してダケンを発行する（S2C DakenIssued を注入）。 */
+  const giveDaken = (type: DakenInstance["type"], timeLimitMs?: number) => {
+    connection.simulateReceive({
+      type: MessageType.DakenIssued,
+      payload: { daken: [makeDaken(type, timeLimitMs)] },
+    });
+  };
+
+  /**
+   * 出題キューを空にして、制限時間の短いお題を1件だけ出す。
+   * DakenIssued は末尾に積まれる（reducer）ため、先頭に置くには一度空にする必要がある。
+   */
+  const showWarningDaken = (timeLimitMs: number) => {
+    for (const d of activeDaken) {
+      connection.simulateReceive({
+        type: MessageType.DakenExpired,
+        payload: { dakenId: d.dakenId },
+      });
+    }
+    connection.simulateReceive({
+      type: MessageType.DakenIssued,
+      payload: { daken: [makeDaken("Normal", timeLimitMs)] },
+    });
+  };
+
+  /** 現在のお題を時間切れにする（サーバーが送る DakenExpired 相当）。 */
+  const expireCurrent = () => {
+    if (!current) return;
+    connection.simulateReceive({
+      type: MessageType.DakenExpired,
+      payload: { dakenId: current.dakenId },
+    });
+  };
+
+  /**
+   * トラップダケン失敗時のペナルティを再現する。
+   * サーバー実装の正典ではなく「クライアント表示がどう変わるか」を見るためのスタブ:
+   *   失敗したお題を消す → 被弾スタックが増える → ペナルティの被弾ダケンが積まれる。
+   */
+  const triggerTrapPenalty = () => {
+    // トラップが現在のお題でなくても、失敗の見え方を再現できるよう先頭を落とす。
+    expireCurrent();
+    const limit = dakenStack.limit || 20;
+    connection.simulateReceive({
+      type: MessageType.DakenStackUpdated,
+      payload: {
+        count: Math.min(limit, dakenStack.count + TRAP_PENALTY_DAKEN),
+        limit,
+        trapPending: false,
+      },
+    });
     connection.simulateReceive({
       type: MessageType.DakenIssued,
       payload: {
-        daken: [
-          {
-            dakenId: `dev-${devSeq}`,
-            type,
-            text: randomWord(),
-            difficultyLevel: 0,
-            timeLimitMs: 999_999,
-            issuedAtServerTimeMs: Date.now(),
-          },
-        ],
+        daken: Array.from({ length: TRAP_PENALTY_DAKEN }, () => makeDaken("EnemySent")),
+      },
+    });
+  };
+
+  /** トラップ誘発待ち（trapPending）の表示だけを立てる。 */
+  const toggleTrapPending = () => {
+    connection.simulateReceive({
+      type: MessageType.DakenStackUpdated,
+      payload: {
+        count: dakenStack.count,
+        limit: dakenStack.limit || 20,
+        trapPending: !dakenStack.trapPending,
       },
     });
   };
@@ -85,6 +162,28 @@ export function InMatchDevTools({
       <DevButton onClick={() => giveDaken("Normal")}>＋ダケン</DevButton>
       <DevButton onClick={() => giveDaken("Trap")} tone="danger">
         ＋トラップ
+      </DevButton>
+      <DevButton
+        onClick={() => showWarningDaken(5_000)}
+        title="出題キューを空にして制限時間5秒のお題を出す（残り時間の警告表示を確認する）"
+      >
+        警告お題(5秒)
+      </DevButton>
+      <DevButton
+        disabled={!current}
+        onClick={expireCurrent}
+        title="現在のお題を時間切れにする（DakenExpired 相当）"
+      >
+        時間切れ
+      </DevButton>
+      <DevButton onClick={triggerTrapPenalty} tone="danger" title="トラップ失敗のペナルティを再現">
+        トラップ失敗
+      </DevButton>
+      <DevButton
+        onClick={toggleTrapPending}
+        title="トラップ誘発待ちの表示を切り替える"
+      >
+        誘発待ち{dakenStack.trapPending ? "解除" : ""}
       </DevButton>
 
       <DevButton
