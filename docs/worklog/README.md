@@ -50,4 +50,4 @@ docs/worklog/log-NNN-{短いkebab-caseの主題}/
 | [012](./log-012-blocked-issues/README.md) | ブロック中 Issue の記録（#8 TypingJudge / #14 デプロイ） | ⏸ 保留 | 2026-07-23 |
 | [014](./log-014-typing-judge/README.md) | タイピング判定(#8)＋フロント完結テスト/サーバー切替 | ✅ 実装・ブラウザ検証済み | 2026-07-26 |
 | [015](./log-015-screen-flow/README.md) | 画面フロー(title→mode→name→in-game)＋名前・ランキング土台 | ✅ 実装・ブラウザ検証済み | 2026-07-26 |
-| [016](./log-016-romaji/README.md) | ローマ字入力（かな→受理ローマ字）判定・#8 本実装 | ✅ 実装・ブラウザ検証済み | 2026-07-27 |
+| [016](./log-016-romaji/README.md) | ローマ字入力（かな→受理ローマ字）判定・#8 本実装 | ✅ 実装・ブラウザ検証済み | 2026-07-27 || [017](./log-017-hud-console-redesign/README.md) | 試合中HUDの「戦況コンソール」デザイン刷新（白地＋赤） | ✅ 実装・ブラウザ検証済み | 2026-07-29 |
