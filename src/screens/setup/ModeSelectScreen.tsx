@@ -29,7 +29,7 @@ export function ModeSelectScreen({ onSelect, onBack }: Props) {
         disabled
       />
 
-      <button onClick={onBack} className="mt-2 text-sm text-slate-400 hover:text-slate-200">
+      <button onClick={onBack} className="mt-2 text-sm text-sub hover:text-ink">
         ← タイトルへ戻る
       </button>
     </div>
@@ -51,17 +51,17 @@ function ModeButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="rounded-lg border border-slate-700 bg-slate-800/60 px-5 py-4 text-left enabled:hover:border-emerald-500 enabled:hover:bg-slate-800 disabled:opacity-40"
+      className="border border-line bg-panel px-5 py-4 text-left enabled:hover:border-accent enabled:hover:bg-accent-soft disabled:opacity-40"
     >
       <div className="font-bold">
         {title}
         {disabled && (
-          <span className="ml-2 rounded bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-300">
+          <span className="ml-2 border border-line bg-head px-1.5 py-0.5 text-[10px] text-sub">
             近日
           </span>
         )}
       </div>
-      <div className="mt-0.5 text-sm text-slate-400">{desc}</div>
+      <div className="mt-0.5 text-sm text-sub">{desc}</div>
     </button>
   );
 }

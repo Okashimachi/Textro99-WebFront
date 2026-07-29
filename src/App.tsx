@@ -172,10 +172,11 @@ export function App() {
   const statusLabel = backend === "mock" ? "フロント完結（ローカル）" : status;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
-      <header className="border-b border-slate-700 px-4 py-2">
-        <p className="text-xs text-slate-400">
-          テキストロ99 / 画面: {stage === "in-game" ? phase : stage}
+    <div className="min-h-screen bg-paper font-hud text-ink">
+      <header className="flex items-center gap-2 border-b border-line bg-panel px-3 py-1.5">
+        <span className="text-xs font-black tracking-wide text-accent">テキストロ99</span>
+        <p className="text-[11px] text-sub">
+          画面: {stage === "in-game" ? phase : stage}
           {stage === "in-game" &&
             showDevTools &&
             ` / 接続: ${statusLabel} / 生存: ${state.aliveCount}`}
@@ -183,7 +184,7 @@ export function App() {
         </p>
       </header>
 
-      <main className="px-4">{body}</main>
+      <main className="px-3">{body}</main>
 
       {/*
         手動クリア報告ボタン。かなお題（例「ねこ」）は直接照合方式で打鍵できないことがあり、
@@ -207,7 +208,7 @@ export function App() {
                 elapsedMs: 0,
               } satisfies DakenClearReport);
             }}
-            className="rounded bg-indigo-700 px-2 py-1 text-xs enabled:hover:bg-indigo-600 disabled:opacity-40"
+            className="border border-line bg-panel px-2 py-1 text-xs enabled:hover:bg-head disabled:opacity-40"
           >
             現在のダケンを手動クリア報告（かなお題の疎通用）
             {state.activeDaken[0]
@@ -221,11 +222,11 @@ export function App() {
       {stage === "in-game" && showDevTools && (
         <>
           <section className="px-4 pb-4 text-xs">
-            <h2 className="mb-1 font-bold text-slate-300">
+            <h2 className="mb-1 font-bold text-ink">
               入力送信ログ（inputActive: {String(inputActive)} / 戦略:{" "}
               {selectedStrategyId ?? "—"} / 打鍵: {typed || "—"} / ミス: {missCount}）
             </h2>
-            <ul className="space-y-0.5 font-mono text-slate-400">
+            <ul className="space-y-0.5 font-mono text-sub">
               {sentLog.map((s, i) => (
                 <li key={i}>
                   {s.sent ? "→" : "×"} {s.envelope.type} {JSON.stringify(s.envelope.payload)}
@@ -235,7 +236,7 @@ export function App() {
           </section>
 
           <section className="p-4">
-            <h2 className="mb-2 text-sm font-bold text-slate-300">
+            <h2 className="mb-2 text-sm font-bold text-ink">
               Dev モック（S2C 手動注入・単体検証）
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -246,8 +247,8 @@ export function App() {
                     connection.simulateReceive(m.envelope);
                     setStep(i + 1);
                   }}
-                  className={`rounded px-2 py-1 text-xs ${
-                    i < step ? "bg-emerald-700" : "bg-slate-700 hover:bg-slate-600"
+                  className={`px-2 py-1 text-xs ${
+                    i < step ? "border border-accent-dark bg-accent text-white" : "border border-line bg-panel hover:bg-head"
                   }`}
                 >
                   {i + 1}. {m.label}
