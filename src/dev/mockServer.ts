@@ -26,7 +26,8 @@ const WORDS = [
   "たいぴんぐ", "こんぼ", "こうげき", "しょうり", "ぷれいやー", "ばとる",
 ];
 
-const randomWord = () => WORDS[Math.floor(Math.random() * WORDS.length)];
+/** かなお題をランダムに1件返す（dev ツールからも使う）。 */
+export const randomWord = () => WORDS[Math.floor(Math.random() * WORDS.length)];
 
 export interface MockServerOptions {
   /** 自分の表示上の playerId。 */

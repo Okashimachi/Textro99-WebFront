@@ -33,6 +33,8 @@ interface Props {
   onToggleDevTools?: (show: boolean) => void;
   /** 開始カウントダウンの終了時刻(ms epoch)。マッチング完了直後のみ非 null。 */
   startCountdownDeadlineMs?: number | null;
+  /** 試合中ヘッダー右側の開発ツール（練習モードのみ）。 */
+  inMatchDevTools?: React.ReactNode;
 }
 
 export function ScreenRouter({
@@ -47,6 +49,7 @@ export function ScreenRouter({
   showDevTools,
   onToggleDevTools,
   startCountdownDeadlineMs,
+  inMatchDevTools,
 }: Props) {
   switch (phase) {
     case "title":
@@ -86,6 +89,7 @@ export function ScreenRouter({
           typedPrefix={typedPrefix}
           missCount={missCount}
           selfDisplayName={selfDisplayName}
+          devTools={inMatchDevTools}
         />
       );
 

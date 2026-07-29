@@ -18,6 +18,7 @@ import { useInputController } from "@/input";
 import { useTypingJudge } from "@/typing";
 import { useProfile } from "@/profile";
 import { startMockServer } from "@/dev/mockServer";
+import { InMatchDevTools } from "@/dev/InMatchDevTools";
 import { RawStateDebugPane } from "@/components/RawStateDebugPane";
 import { MOCK_SEQUENCE } from "@/dev/mockMessages";
 
@@ -165,6 +166,17 @@ export function App() {
         showDevTools={showDevTools}
         onToggleDevTools={setShowDevTools}
         startCountdownDeadlineMs={startCountdownDeadlineMs}
+        inMatchDevTools={
+          // 練習（フロント完結）モードのみ。オンライン対戦では出さない。
+          backend === "mock" ? (
+            <InMatchDevTools
+              connection={connection}
+              activeDaken={state.activeDaken}
+              comboValue={state.combo.value}
+              onManualClear={onClear}
+            />
+          ) : undefined
+        }
       />
     );
   }
@@ -185,38 +197,6 @@ export function App() {
       </header>
 
       <main className="px-3">{body}</main>
-
-      {/*
-        手動クリア報告ボタン。かなお題（例「ねこ」）は直接照合方式で打鍵できないことがあり、
-        その場合の DakenClearReport 疎通用に実発行 dakenId で報告する。
-        ※ これは開発ツール表示（showDevTools）に関わらず in-game 中「常に表示」する。
-      */}
-      {stage === "in-game" && (
-        <section className="p-4 text-xs">
-          <button
-            disabled={state.activeDaken.length === 0}
-            onClick={() => {
-              const daken = state.activeDaken[0];
-              if (!daken) return;
-              // onClear 経由で送る（送信＋現在お題の active 除去をまとめて行う）。
-              // connection.send を直接呼ぶと DakenExpired が注入されず、次のお題が
-              // 追加されるだけで先頭が入れ替わらない＝画面上お題が進まないため。
-              onClear({
-                dakenId: daken.dakenId,
-                isMiss: false,
-                missCount: 0,
-                elapsedMs: 0,
-              } satisfies DakenClearReport);
-            }}
-            className="border border-zinc-300 bg-white px-2 py-1 text-xs enabled:hover:bg-zinc-100 disabled:opacity-40"
-          >
-            現在のダケンを手動クリア報告（かなお題の疎通用）
-            {state.activeDaken[0]
-              ? ` [${state.activeDaken[0].dakenId} “${state.activeDaken[0].text}”]`
-              : ""}
-          </button>
-        </section>
-      )}
 
       {/* dev: 送信ログ・S2C 注入・生 state（in-game かつ 開発ツール表示 ON のときのみ） */}
       {stage === "in-game" && showDevTools && (

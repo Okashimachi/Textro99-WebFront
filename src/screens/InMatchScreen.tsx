@@ -33,6 +33,8 @@ interface Props {
   selfDisplayName?: string;
   /** 観戦中（脱落済み）なら操作系をトーンダウンする。 */
   spectating?: boolean;
+  /** ヘッダー右側に置く開発ツール（練習モードのみ・dev 専用）。 */
+  devTools?: React.ReactNode;
 }
 
 export function InMatchScreen({
@@ -42,11 +44,15 @@ export function InMatchScreen({
   missCount,
   selfDisplayName,
   spectating = false,
+  devTools,
 }: Props) {
   return (
     // 1画面ぶんの高さを使い切る（ヘッダ約 2.5rem ぶんを差し引く）。
     <div className="mx-auto flex min-h-[calc(100vh-2.75rem)] max-w-[1280px] flex-col gap-2 py-2">
-      <MatchStatusBar state={state} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <MatchStatusBar state={state} />
+        {devTools}
+      </div>
 
       {spectating && (
         <div className="border border-red-500 bg-red-50 px-3 py-1.5 text-center text-xs font-bold text-red-800">
