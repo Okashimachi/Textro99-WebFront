@@ -4,12 +4,11 @@
 // レイアウト方針（視線は中央の主ディスプレイに固定し、周辺に情報を配る）:
 //
 //   ┌──── ヘッダ: 残り人数 / 撃破数（この2つだけを大きく）────┐
-//   │ 敵の状況     │      作戦（0-9）        │               │
-//   │ （99マス・  │  通知（戦況ログ）        │  NEXT         │
-//   │  欠席は ✕）  │ ┌────────────────────┐ │ （下から積む・│
-//   │              │ │ 主ディスプレイ      │ │  左レールが   │
-//   │              │ │ いま打つお題 (+攻撃力)│ │  溜まり具合） │
-//   │ ランキング   │ └────────────────────┘ │               │
+//   │ 順位 │ 敵の状況│      作戦（0-9）        │             │
+//   │      │（99マス・│  通知（戦況ログ）        │  NEXT       │
+//   │      │ 欠席は ✕）│ ┌────────────────────┐ │（上が「次」・│
+//   │      │         │ │ 主ディスプレイ      │ │ 下へ溜まる・ │
+//   │      │         │ │ いま打つお題 (+攻撃力)│ │ 地色で危険度）│
 //   └──────────────────────────────────────────────────────┘
 //
 // 被弾予告は NEXT のトラップ／被弾ダケン（色で区別）に統合したため専用パネルを持たない。
@@ -59,13 +58,18 @@ export function InMatchScreen({
           spectating ? "opacity-60" : ""
         }`}
       >
-        {/* 左：敵の状況（99マス）＋ランキング */}
-        <div className="order-2 space-y-2 lg:order-1">
-          <PlayerGrid99 players={state.players} selfPlayerId={state.selfPlayerId} />
+        {/* 左：ランキング（細め）＋敵の状況（太め）。どちらも縦長に揃える。 */}
+        <div className="order-2 grid grid-cols-[0.72fr_1.28fr] gap-2 lg:order-1">
           <LiveRanking
             players={state.players}
             selfPlayerId={state.selfPlayerId}
             selfDisplayName={selfDisplayName}
+            className="h-full"
+          />
+          <PlayerGrid99
+            players={state.players}
+            selfPlayerId={state.selfPlayerId}
+            className="h-full"
           />
         </div>
 

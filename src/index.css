@@ -98,6 +98,21 @@ html {
   animation: value-bump 0.32s ease-out;
 }
 
+/* ストックが危険域に入ったときの、窓全体のゆっくりした警告点滅（薄い赤）。 */
+@keyframes soft-alert {
+  0%,
+  100% {
+    background-color: #fee2e2;
+  }
+  50% {
+    background-color: #fca5a5;
+  }
+}
+
+.animate-soft-alert {
+  animation: soft-alert 2.2s ease-in-out infinite;
+}
+
 .animate-danger-pulse {
   animation: danger-pulse 0.8s ease-in-out infinite;
 }

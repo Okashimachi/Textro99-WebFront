@@ -65,8 +65,8 @@ export function EventLog({ events, limit = 2 }: Props) {
         return (
           <div
             key={e.id}
-            className={`animate-warn-drop flex items-center gap-2 border-2 px-2 py-1.5 ${s.box} ${
-              i === 0 ? "" : "opacity-60"
+            className={`flex items-center gap-2 border-2 px-2 py-1.5 ${s.box} ${
+              i === 0 ? "animate-warn-drop" : "opacity-60"
             }`}
           >
             <span

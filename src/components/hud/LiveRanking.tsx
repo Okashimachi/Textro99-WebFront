@@ -11,6 +11,8 @@ interface Props {
   selfDisplayName?: string;
   /** 上位何件まで出すか（既定 6）。 */
   limit?: number;
+  /** 外側パネルの追加クラス（高さの引き伸ばし用）。 */
+  className?: string;
 }
 
 // 上位3位のメダル色（表示だけ）。
@@ -24,7 +26,8 @@ export function LiveRanking({
   players,
   selfPlayerId,
   selfDisplayName,
-  limit = 6,
+  limit = 14,
+  className = "",
 }: Props) {
   const ranked = deriveRanking(players, selfPlayerId);
   const total = ranked.length;
@@ -37,6 +40,7 @@ export function LiveRanking({
       label="ランキング"
       tone="badge"
       right={selfRow ? `自分 ${selfRow.rank} / ${total}` : `${total}人`}
+      className={className}
       bodyClassName="p-2"
     >
       <ul className="space-y-px">

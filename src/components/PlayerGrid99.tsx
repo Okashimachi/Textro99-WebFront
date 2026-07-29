@@ -17,6 +17,8 @@ interface Props {
   players: PlayerView[];
   /** 自分の playerId（セルを強調表示）。 */
   selfPlayerId: string | null;
+  /** 外側パネルの追加クラス（高さの引き伸ばし用）。 */
+  className?: string;
 }
 
 /** 盤面のマス数（自分を含む）。 */
@@ -42,7 +44,7 @@ function cellClass(p: PlayerView, isSelf: boolean): string {
   return isSelf ? `${base} outline outline-2 outline-sky-600` : base;
 }
 
-export function PlayerGrid99({ players, selfPlayerId }: Props) {
+export function PlayerGrid99({ players, selfPlayerId, className = "" }: Props) {
   const aliveCount = players.filter((p) => p.alive).length;
   const seated = players.slice(0, SEATS);
   const emptySeats = Math.max(0, SEATS - seated.length);
@@ -52,6 +54,7 @@ export function PlayerGrid99({ players, selfPlayerId }: Props) {
       label="敵の状況"
       tone="alive"
       right={`残り ${aliveCount} / ${SEATS}人`}
+      className={className}
       bodyClassName="p-2"
     >
       <div className="grid grid-cols-9 gap-1">
