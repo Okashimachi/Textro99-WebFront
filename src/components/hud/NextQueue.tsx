@@ -4,7 +4,7 @@
 // 兼ねる役割:
 //   ・次に何が来るかの先読み（ひらがなだけをコンパクトに縦積み。次の1件だけ2倍の高さで強調）。
 //   ・被弾でどれくらい溜まっているか＝あと何枠でゲームオーバーかの可視化。
-//     溜まり具合は「窓全体の地色」で示し、危険域ではゆっくり薄赤に点滅する。
+//     溜まり具合は「窓全体の地色」で示し、危険域では前景（お題の札）をゆっくり点滅させる。
 //
 // 種別は色で区別する（通常=黒 / 被弾=琥珀 / トラップ=赤）。ラベル・Lv・ローマ字は出さない。
 // 入力は DTO と ViewModel のみ。判定・戦闘数値の算出はしない（docs/rules/01 §3）。
@@ -38,12 +38,8 @@ export function NextQueue({ activeDaken, dakenStack, limit = 12 }: Props) {
   const danger = ratio >= 0.85;
   const warn = ratio >= 0.6;
 
-  // 溜まり具合＝窓全体の地色。危険域はゆっくり点滅させる。
-  const windowTone = danger
-    ? "animate-soft-alert"
-    : warn
-      ? "bg-amber-50"
-      : "bg-white";
+  // 溜まり具合＝窓全体の地色（静止）。危険域は前景（札）を点滅させて知らせる。
+  const windowTone = danger ? "bg-red-100" : warn ? "bg-amber-50" : "bg-white";
   const remainColor = danger
     ? "text-red-600"
     : warn
@@ -65,7 +61,7 @@ export function NextQueue({ activeDaken, dakenStack, limit = 12 }: Props) {
           `${upcoming.length} 件`
         )
       }
-      bodyClassName={`flex flex-col gap-1 p-2 transition-colors ${windowTone}`}
+      bodyClassName={`flex flex-col gap-1 overflow-hidden p-2 transition-colors ${windowTone}`}
     >
       {upcoming.length === 0 ? (
         <div className="border border-dashed border-zinc-300 px-2 py-4 text-center text-[11px] text-zinc-400">
@@ -80,7 +76,11 @@ export function NextQueue({ activeDaken, dakenStack, limit = 12 }: Props) {
               key={d.dakenId}
               className={`animate-queue-in flex shrink-0 items-center truncate border px-2 font-bold leading-tight ${
                 TYPE_LOOK[d.type]
-              } ${isNext ? "h-14 border-2 text-2xl shadow-sm" : "h-7 text-base"}`}
+              } ${
+                isNext
+                  ? "h-16 border-2 text-2xl shadow-sm"
+                  : "h-9 text-lg"
+              } ${danger ? "animate-fg-alert" : ""}`}
             >
               {d.text}
             </div>

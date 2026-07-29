@@ -98,19 +98,19 @@ html {
   animation: value-bump 0.32s ease-out;
 }
 
-/* ストックが危険域に入ったときの、窓全体のゆっくりした警告点滅（薄い赤）。 */
-@keyframes soft-alert {
+/* ストックが危険域に入ったときの警告。背景ではなく前景（お題の札）をゆっくり点滅させる。 */
+@keyframes fg-alert {
   0%,
   100% {
-    background-color: #fee2e2;
+    opacity: 1;
   }
   50% {
-    background-color: #fca5a5;
+    opacity: 0.35;
   }
 }
 
-.animate-soft-alert {
-  animation: soft-alert 2.2s ease-in-out infinite;
+.animate-fg-alert {
+  animation: fg-alert 1.8s ease-in-out infinite;
 }
 
 .animate-danger-pulse {

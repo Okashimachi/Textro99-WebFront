@@ -44,7 +44,8 @@ export function InMatchScreen({
   spectating = false,
 }: Props) {
   return (
-    <div className="mx-auto max-w-[1280px] space-y-2 py-2">
+    // 1画面ぶんの高さを使い切る（ヘッダ約 2.5rem ぶんを差し引く）。
+    <div className="mx-auto flex min-h-[calc(100vh-2.75rem)] max-w-[1280px] flex-col gap-2 py-2">
       <MatchStatusBar state={state} />
 
       {spectating && (
@@ -54,12 +55,12 @@ export function InMatchScreen({
       )}
 
       <div
-        className={`grid gap-2 lg:grid-cols-[minmax(240px,0.9fr)_minmax(420px,1.5fr)_minmax(200px,0.7fr)] ${
+        className={`grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(240px,0.9fr)_minmax(420px,1.5fr)_minmax(200px,0.7fr)] ${
           spectating ? "opacity-60" : ""
         }`}
       >
         {/* 左：ランキング（細め）＋敵の状況（太め）。どちらも縦長に揃える。 */}
-        <div className="order-2 grid grid-cols-[0.72fr_1.28fr] gap-2 lg:order-1">
+        <div className="order-2 grid min-h-0 grid-cols-[0.6fr_1.4fr] gap-2 lg:order-1">
           <LiveRanking
             players={state.players}
             selfPlayerId={state.selfPlayerId}
@@ -74,7 +75,7 @@ export function InMatchScreen({
         </div>
 
         {/* 中央：作戦 → 通知 → 主ディスプレイ（攻撃力を内包） */}
-        <div className="order-1 space-y-2 lg:order-2">
+        <div className="order-1 flex min-h-0 flex-col gap-2 lg:order-2">
           <StrategySelector selectedStrategyId={selectedStrategyId} />
           <EventLog events={state.events} />
           <PlayField
@@ -83,11 +84,12 @@ export function InMatchScreen({
             difficulty={state.difficulty}
             typedPrefix={typedPrefix}
             missCount={missCount}
+            className="min-h-0 flex-1"
           />
         </div>
 
         {/* 右：NEXT（積み上げ＋溜まり具合レール） */}
-        <div className="order-3">
+        <div className="order-3 min-h-0">
           <NextQueue activeDaken={state.activeDaken} dakenStack={state.dakenStack} />
         </div>
       </div>

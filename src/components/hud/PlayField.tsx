@@ -26,6 +26,8 @@ interface Props {
   typedPrefix?: string;
   /** ミス打鍵の累計（#8・表示専用）。 */
   missCount?: number;
+  /** 外側パネルの追加クラス（高さの引き伸ばし用）。 */
+  className?: string;
 }
 
 // 種別ごとの盤面の縁色（NEXT と同じ意味づけ: 通常=青 / 被弾=琥珀 / トラップ=赤）。
@@ -41,6 +43,7 @@ export function PlayField({
   difficulty,
   typedPrefix = "",
   missCount = 0,
+  className = "",
 }: Props) {
   const current = activeDaken[0];
   const matched = current && current.text.startsWith(typedPrefix) ? typedPrefix.length : 0;
@@ -57,10 +60,11 @@ export function PlayField({
           ミス {missCount}
         </span>
       }
-      bodyClassName="p-3"
+      className={className}
+      bodyClassName="flex min-h-0 flex-col p-3"
     >
       <div
-        className={`relative flex min-h-[200px] flex-col items-center justify-center border-2 px-4 py-6 text-center ${
+        className={`relative flex min-h-[200px] flex-1 flex-col items-center justify-center border-2 px-4 py-6 text-center ${
           current ? TYPE_FRAME[current.type] : "border-zinc-200 bg-zinc-50"
         }`}
       >
@@ -91,7 +95,7 @@ export function PlayField({
       </div>
 
       {/* 打鍵の進捗 */}
-      <div className="mt-2 h-2 w-full bg-zinc-100">
+      <div className="mt-2 h-2 w-full shrink-0 bg-zinc-100">
         <div
           className="h-full bg-emerald-500 transition-[width] duration-100"
           style={{ width: `${progress}%` }}
