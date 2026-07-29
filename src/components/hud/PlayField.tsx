@@ -2,9 +2,9 @@
 // PlayField — 主ディスプレイ。いま打つお題だけを最大サイズで見せる。
 //
 // レイアウト:
-//   ・上端: 制限時間の残り（サーバーの timeLimitMs を基準にした表示用カウントダウン）。
-//     残り僅かになると琥珀→赤で警告する。**時間切れの確定はサーバー権威**（DakenExpired）で、
-//     ここでは一切判定しない（バーが 0 になっても勝手にお題を消さない）。
+//   ・上端: 制限時間の残り（useDakenTimer の表示用カウントダウン）。残り僅かで琥珀→赤。
+//     危険域では画面全体もフラッシュする（InMatchScreen 側のオーバーレイ）。
+//     **時間切れの確定はサーバー権威**（DakenExpired）で、ここでは一切判定しない。
 //   ・中央: 現在のお題（打鍵済みは緑＝確定、残りは黒）とローマ字ヒント。
 //   ・下端: 打鍵の進捗バー。
 //   ・右下: 攻撃力（ComboGauge・円形バッジ）を重ねる。
@@ -13,13 +13,12 @@
 // 入力は ViewModel の値と表示用の打鍵経過のみ。判定・戦闘数値の算出は一切しない
 // （docs/rules/01 §3。判定は #8 TypingJudge、戦闘値はサーバー権威）。
 // ============================================================================
-import { useRef } from "react";
 import type { DakenInstance } from "@/proto/types";
 import type { ComboState, DifficultyState } from "@/state";
 import { romajiHint } from "@/typing/romaji";
 import { ComboGauge } from "./ComboGauge";
 import { Panel } from "./Panel";
-import { useNow } from "./useNow";
+import type { DakenTimer } from "./useDakenTimer";
 
 interface Props {
   activeDaken: DakenInstance[];
@@ -31,12 +30,11 @@ interface Props {
   typedPrefix?: string;
   /** ミス打鍵の累計（#8・表示専用）。 */
   missCount?: number;
+  /** 残り時間（useDakenTimer の結果。画面全体の警告と基準を揃えるため親から渡す）。 */
+  timer: DakenTimer;
   /** 外側パネルの追加クラス（高さの引き伸ばし用）。 */
   className?: string;
 }
-
-// この値より長い制限時間は「実質無制限」とみなして残り時間を出さない（練習用スタブ対策）。
-const TIMER_VISIBLE_MAX_MS = 60_000;
 
 // 種別ごとの盤面の縁色（NEXT と同じ意味づけ: 通常=青 / 被弾=琥珀 / トラップ=赤）。
 const TYPE_FRAME: Record<DakenInstance["type"], string> = {
@@ -51,24 +49,12 @@ export function PlayField({
   difficulty,
   typedPrefix = "",
   missCount = 0,
+  timer,
   className = "",
 }: Props) {
-  const now = useNow(100);
   const current = activeDaken[0];
-
-  // 残り時間の基準はお題が画面に出た時刻（表示専用）。サーバーの単調時刻とは突き合わせない。
-  const seenRef = useRef<{ dakenId: string; atMs: number } | null>(null);
-  if (current && seenRef.current?.dakenId !== current.dakenId) {
-    seenRef.current = { dakenId: current.dakenId, atMs: Date.now() };
-  }
-  const limitMs = current?.timeLimitMs ?? 0;
-  const showTimer = !!current && limitMs > 0 && limitMs <= TIMER_VISIBLE_MAX_MS;
-  const remainMs = showTimer
-    ? Math.max(0, limitMs - (now - (seenRef.current?.atMs ?? now)))
-    : 0;
-  const timeRatio = showTimer && limitMs > 0 ? remainMs / limitMs : 1;
-  const timeDanger = showTimer && timeRatio <= 0.25;
-  const timeWarn = showTimer && timeRatio <= 0.5;
+  const { show: showTimer, remainMs, ratio: timeRatio, warn: timeWarn, danger: timeDanger } =
+    timer;
 
   const matched = current && current.text.startsWith(typedPrefix) ? typedPrefix.length : 0;
   const total = current?.text.length ?? 0;

@@ -113,6 +113,24 @@ html {
   animation: fg-alert 1.8s ease-in-out infinite;
 }
 
+/* お題の残り時間が僅かなときの、画面全体の警告フラッシュ（内側からの赤いにじみ）。
+   内容の可読性を落とさないよう、中央は薄く縁だけを強く光らせる。 */
+@keyframes screen-alert {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0);
+    background-color: rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 90px 18px rgba(239, 68, 68, 0.55);
+    background-color: rgba(239, 68, 68, 0.07);
+  }
+}
+
+.animate-screen-alert {
+  animation: screen-alert 0.7s ease-in-out infinite;
+}
+
 .animate-danger-pulse {
   animation: danger-pulse 0.8s ease-in-out infinite;
 }
