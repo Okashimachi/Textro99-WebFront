@@ -1,101 +1,72 @@
-// ComboGauge — コンボ値（攻撃原資）を視覚化するリングメーター。
-// 値はサーバー由来（ComboUpdated）。ローカル算出しない。
-// 表示方針: リングの充填＋大きな数字＋エネルギーピップで、コンボの溜まり具合を直感的に見せる。
+// ComboGauge — 「OUT（自分の攻撃）」パネル。コンボ値＝攻撃の原資をブロック段で見せる。
+// 値はサーバー由来（ComboUpdated）。ローカル算出しない（docs/rules/01 §3）。
+// 表示方針: 大きな数値＋10段ブロックで「どれだけ溜まっているか」を一目で読ませる。
 import type { ComboState } from "@/state";
+import { Panel } from "./Panel";
 
 interface Props {
   combo: ComboState;
 }
 
-// 満タン（リング一周）の目安（表示だけ。戦闘の閾値ではない）。
+// ブロック段数（表示だけ。戦闘の閾値ではない）。
 const GAUGE_FULL = 10;
-const R = 34;
-const CIRC = 2 * Math.PI * R;
 
 export function ComboGauge({ combo }: Props) {
-  const ratio = Math.min(1, combo.value / GAUGE_FULL);
+  const filled = Math.min(combo.value, GAUGE_FULL);
   const hot = combo.value >= GAUGE_FULL;
-  const gained = combo.lastDelta > 0;
-  const stroke = hot ? "#fbbf24" : "#38bdf8";
 
   return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl border-2 p-3 transition-colors ${
-        hot
-          ? "border-amber-400/70 bg-gradient-to-br from-amber-500/15 to-slate-950"
-          : "border-sky-500/40 bg-gradient-to-br from-sky-500/10 to-slate-950"
-      }`}
+    <Panel
+      label="OUT — 自分の攻撃"
+      tone="accent"
+      right={hot ? "MAX" : `${filled} / ${GAUGE_FULL}`}
     >
-      {/* リングメーター */}
-      <div className="relative h-[84px] w-[84px] shrink-0">
-        <svg viewBox="0 0 84 84" className="h-full w-full -rotate-90">
-          <circle cx="42" cy="42" r={R} fill="none" stroke="#1e293b" strokeWidth="8" />
-          <circle
-            cx="42"
-            cy="42"
-            r={R}
-            fill="none"
-            stroke={stroke}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={CIRC}
-            strokeDashoffset={CIRC * (1 - ratio)}
-            className={`transition-[stroke-dashoffset] duration-300 ${hot ? "drop-shadow-[0_0_6px_rgba(251,191,36,0.8)]" : ""}`}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span
-            key={combo.value}
-            className={`animate-value-bump text-3xl font-black leading-none tabular-nums ${
-              hot ? "text-amber-300" : "text-sky-300"
-            }`}
-          >
-            {combo.value}
+      <div className="text-[10px] tracking-wide text-sub">攻撃力（コンボ）</div>
+      <div className="flex items-baseline gap-2">
+        <span
+          key={combo.value}
+          className="animate-value-bump text-5xl font-black leading-none tabular-nums text-accent"
+        >
+          {combo.value}
+        </span>
+        {hot && (
+          <span className="border border-accent px-1 text-[10px] font-bold text-accent">
+            MAX
           </span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
-            combo
-          </span>
-        </div>
-      </div>
-
-      {/* 右側：エネルギーピップ＋直近増減 */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            攻撃チャージ
-          </span>
-          {combo.lastReason && (
-            <span
-              className={`rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
-                gained ? "bg-sky-500/20 text-sky-200" : "bg-slate-700/60 text-slate-300"
-              }`}
-            >
+        )}
+        {combo.lastReason && (
+          <span className="ml-auto text-right text-[11px] leading-tight text-sub">
+            <span className="tabular-nums">
               {combo.lastDelta >= 0 ? `+${combo.lastDelta}` : combo.lastDelta}
             </span>
-          )}
-        </div>
-        {/* エネルギーピップ（GAUGE_FULL 分の充填を段階表示） */}
-        <div className="mt-2 flex gap-1">
-          {Array.from({ length: GAUGE_FULL }).map((_, i) => {
-            const filled = i < Math.min(combo.value, GAUGE_FULL);
-            return (
-              <span
-                key={i}
-                className={`h-4 flex-1 rounded-sm transition-colors ${
-                  filled
-                    ? hot
-                      ? "bg-gradient-to-t from-amber-500 to-yellow-300"
-                      : "bg-gradient-to-t from-sky-500 to-cyan-300"
-                    : "bg-slate-800"
-                }`}
-              />
-            );
-          })}
-        </div>
-        <div className="mt-1.5 text-[10px] text-slate-500">
-          {hot ? "⚡ MAX チャージ！ Enter で攻撃" : "コンボを繋いで攻撃力アップ"}
-        </div>
+            <span className="ml-1">（{combo.lastReason}）</span>
+          </span>
+        )}
       </div>
-    </div>
+
+      {/* 10段ブロック */}
+      <div className="mt-2 flex gap-px">
+        {Array.from({ length: GAUGE_FULL }).map((_, i) => (
+          <span
+            key={i}
+            className={`h-5 flex-1 border ${
+              i < filled ? "border-accent-dark bg-accent" : "border-line bg-accent-soft"
+            }`}
+          />
+        ))}
+      </div>
+
+      <div
+        className={`mt-2 flex items-center gap-2 border px-2 py-1 text-[11px] ${
+          hot
+            ? "animate-danger-pulse border-accent bg-accent-soft text-accent-dark"
+            : "border-line text-sub"
+        }`}
+      >
+        <span aria-hidden>⏎</span>
+        <span className="font-bold">Enter で攻撃発射</span>
+        <span className="ml-auto tabular-nums">威力 {combo.value}</span>
+      </div>
+    </Panel>
   );
 }

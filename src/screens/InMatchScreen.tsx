@@ -1,17 +1,19 @@
 // 試合中画面。HUD コンポーネント群を state から組み立てる。
 // 各コンポーネントは proto DTO / ViewModel のみを入力とし、判定ロジックを持たない。
 //
-// レイアウト方針（ゲーム HUD）:
-//   ・中央列＝お題キューと被弾スタックを統合した縦レーン盤面。画面の縦横ど真ん中に置く。
-//   ・盤面の上：残り人数＋被弾予告（コンパクト・盤面の上に浮かせて多数表示・盤面は動かさない）。
-//   ・盤面の下：コンボ（視覚メーター）＋作戦。
-//   ・左：99人グリッド、右：ランキング＋戦況ログ。
+// レイアウト方針（戦況コンソール／白地・赤アクセントの情報密度重視）:
+//   ・最上段：常設ステータスバー（残り／順位／撃破／難易度）。
+//   ・左列：OUT（自分の攻撃＝コンボ）＋作戦。
+//   ・中央列：お題盤面（被弾スタック・現在のお題・NEXT）。画面中央に最大サイズで置く。
+//   ・右列：IN（被弾予告）＋ランキング。
+//   ・下段：戦況ログ（左）と 99人グリッド（右）。
 import type { GameViewModel } from "@/state";
 import { ComboGauge } from "@/components/hud/ComboGauge";
 import { AttackWarningBar } from "@/components/hud/AttackWarningBar";
 import { StrategySelector } from "@/components/hud/StrategySelector";
 import { EventLog } from "@/components/hud/EventLog";
 import { LiveRanking } from "@/components/hud/LiveRanking";
+import { MatchStatusBar } from "@/components/hud/MatchStatusBar";
 import { PlayField } from "@/components/hud/PlayField";
 import { PlayerGrid99 } from "@/components/PlayerGrid99";
 
@@ -38,63 +40,52 @@ export function InMatchScreen({
   spectating = false,
 }: Props) {
   return (
-    <div className="grid items-center gap-4 py-4 lg:min-h-[80vh] lg:grid-cols-[minmax(240px,1fr)_minmax(360px,1.7fr)_minmax(240px,1fr)]">
-      {/* 中央：統合レーン盤面（縦横ど真ん中）＋上下の情報 */}
+    <div className="mx-auto max-w-[1180px] space-y-2 py-2 font-hud">
+      <MatchStatusBar state={state} selfDisplayName={selfDisplayName} />
+
+      {spectating && (
+        <div className="border border-accent bg-accent-soft px-3 py-1.5 text-center text-xs font-bold text-accent-dark">
+          観戦モード（あなたは脱落済み・操作は無効）
+        </div>
+      )}
+
       <div
-        className={`order-first flex flex-col items-center gap-3 lg:order-2 ${
+        className={`grid gap-2 lg:grid-cols-[minmax(220px,1fr)_minmax(360px,1.6fr)_minmax(220px,1fr)] ${
           spectating ? "opacity-60" : ""
         }`}
       >
-        {spectating && (
-          <div className="w-full max-w-md rounded-lg border border-amber-500/40 bg-amber-950/40 px-3 py-2 text-center text-sm text-amber-300">
-            観戦モード（あなたは脱落済み・操作は無効）
-          </div>
-        )}
-
-        {/* 盤面の上：残り人数 */}
-        <div className="flex w-full max-w-md items-center justify-center gap-2 rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-slate-950 px-4 py-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            残り
-          </span>
-          <span className="text-3xl font-black leading-none text-emerald-300 tabular-nums">
-            {state.aliveCount}
-          </span>
-          <span className="text-sm font-bold text-slate-500">/ 99人</span>
+        {/* 左：OUT（自分の攻撃）＋作戦 */}
+        <div className="order-2 space-y-2 lg:order-1">
+          <ComboGauge combo={state.combo} />
+          <StrategySelector selectedStrategyId={selectedStrategyId} />
         </div>
 
-        {/* 盤面＋被弾予告オーバーレイ（盤面の直上に浮かせる＝盤面は動かない） */}
-        <div className="relative w-full max-w-md">
-          <div className="pointer-events-none absolute inset-x-0 bottom-full z-40 mb-2 max-h-44 overflow-hidden">
-            <AttackWarningBar incomingAttacks={state.incomingAttacks} />
-          </div>
+        {/* 中央：お題盤面 */}
+        <div className="order-1 lg:order-2">
           <PlayField
             activeDaken={state.activeDaken}
             dakenStack={state.dakenStack}
+            difficulty={state.difficulty}
             typedPrefix={typedPrefix}
             missCount={missCount}
           />
         </div>
 
-        {/* 盤面の下：コンボ（視覚メーター）＋作戦 */}
-        <div className="w-full max-w-md space-y-3">
-          <ComboGauge combo={state.combo} />
-          <StrategySelector selectedStrategyId={selectedStrategyId} />
+        {/* 右：IN（被弾予告）＋ランキング */}
+        <div className="order-3 space-y-2">
+          <AttackWarningBar incomingAttacks={state.incomingAttacks} />
+          <LiveRanking
+            players={state.players}
+            selfPlayerId={state.selfPlayerId}
+            selfDisplayName={selfDisplayName}
+          />
         </div>
       </div>
 
-      {/* 左：99人グリッド */}
-      <div className="space-y-3 lg:order-1">
-        <PlayerGrid99 players={state.players} selfPlayerId={state.selfPlayerId} />
-      </div>
-
-      {/* 右：ランキング＋戦況ログ */}
-      <div className="space-y-3 lg:order-3">
-        <LiveRanking
-          players={state.players}
-          selfPlayerId={state.selfPlayerId}
-          selfDisplayName={selfDisplayName}
-        />
+      {/* 下段：戦況ログ＋99人グリッド */}
+      <div className="grid items-start gap-2 lg:grid-cols-[1.4fr_1fr]">
         <EventLog events={state.events} />
+        <PlayerGrid99 players={state.players} selfPlayerId={state.selfPlayerId} />
       </div>
     </div>
   );
