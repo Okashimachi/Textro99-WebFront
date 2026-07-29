@@ -88,6 +88,13 @@ export function gameReducer(
         activeDaken: [p.initialDaken],
         gameOver: null,
         matchmaking: null,
+        // 試合ごとの値は MatchStart で初期化する。前の試合の値が残っていると、
+        // 新しい試合の開始直後に前試合の被弾スタック（＝危険警告）やコンボが見えてしまう。
+        // limit だけはサーバーの GameParameters をそのまま写す（クライアントで決めない）。
+        dakenStack: { count: 0, limit: p.parameters.stackLimit, trapPending: false },
+        combo: { value: 0, lastDelta: 0, lastReason: null },
+        difficulty: { globalLevel: 0, personalLevel: 0, effectiveLevel: 0 },
+        incomingAttacks: [],
       };
     }
 
