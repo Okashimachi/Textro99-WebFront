@@ -41,13 +41,13 @@ export function PlayerGrid99({ players, selfPlayerId }: Props) {
 
   return (
     <Panel
-      label={`${players.length}人`}
+      label="敵の状況"
       tone="alive"
-      right={`生存 ${aliveCount} / 脱落 ${players.length - aliveCount}`}
+      right={`残り ${aliveCount} / ${players.length}人`}
       bodyClassName="p-2"
     >
       {/* セルは小さく保つ（盤面が縦に伸びて他パネルを押し出さないように上限幅を付ける） */}
-      <div className="mx-auto grid max-w-[340px] grid-cols-11 gap-px">
+      <div className="mx-auto grid max-w-[260px] grid-cols-11 gap-px">
         {players.map((p) => {
           const isSelf = p.playerId === selfPlayerId;
           return (

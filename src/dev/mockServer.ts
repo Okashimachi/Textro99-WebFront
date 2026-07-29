@@ -92,6 +92,9 @@ export function startMockServer(
         difficultyMaxLevel: 10,
       },
     });
+    // 先読み分（NEXT 表示の確認用）。実サーバーも複数のお題を保持するため、
+    // 練習モードでも常に数件先まで積んだ状態にしておく。
+    recv(MessageType.DakenIssued, { daken: [nextDaken(), nextDaken()] });
   };
 
   // 初期化: Welcome → MatchStart（初期お題つき）。

@@ -1,10 +1,11 @@
 // ============================================================================
-// PlayField — 「お題」パネル。被弾スタック・現在のお題・NEXT キューをまとめた盤面。
+// PlayField — 主ディスプレイ。いま打つお題と被弾スタックだけを大きく見せる。
 //
-// レイアウト（戦況コンソール）:
-//   ・上段: 被弾スタック（横並びのセグメントバー・count/limit）と誘発待ち表示。
-//   ・中段: 現在のお題を最大サイズで。打鍵済みは緑（＝確定）、残りは黒。下にローマ字ヒント。
-//   ・下段: NEXT のお題を行リストで（種別チップ付き）。
+// レイアウト:
+//   ・上段: 被弾スタック（横セグメント・count/limit）と誘発待ち表示。
+//   ・中段: 現在のお題を画面内で最大サイズに。打鍵済みは緑（＝確定）、残りは黒。
+//   ・下段: 打鍵の進捗バー。
+// NEXT は右側の NextQueue、攻撃力は下の ComboGauge が担当する（1パネル1役割）。
 //
 // 入力は ViewModel の値と表示用の打鍵経過のみ。判定・戦闘数値の算出は一切しない
 // （docs/rules/01 §3。判定は #8 TypingJudge、戦闘値はサーバー権威）。
@@ -48,9 +49,9 @@ export function PlayField({
   missCount = 0,
 }: Props) {
   const current = activeDaken[0];
-  const upcoming = activeDaken.slice(1, 4);
   const matched = current && current.text.startsWith(typedPrefix) ? typedPrefix.length : 0;
   const total = current?.text.length ?? 0;
+  const progress = total > 0 ? (matched / total) * 100 : 0;
 
   const { count, limit, trapPending } = dakenStack;
   const segments = Math.min(limit || 0, MAX_SEGMENTS);
@@ -61,10 +62,10 @@ export function PlayField({
 
   return (
     <Panel
-      label="お題"
+      label="いま打つお題"
       tone="info"
       right={`ミス ${missCount} / ${total}打`}
-      bodyClassName="p-3 space-y-3"
+      bodyClassName="p-3 space-y-2"
     >
       {/* 被弾スタック（横セグメント） */}
       <div>
@@ -108,7 +109,7 @@ export function PlayField({
       </div>
 
       {/* 現在のお題 */}
-      <div className="border-2 border-sky-200 bg-sky-50/40 px-3 py-4 text-center">
+      <div className="flex min-h-[150px] flex-col items-center justify-center border-2 border-sky-200 bg-sky-50/40 px-3 py-4 text-center">
         {current ? (
           <>
             <div className="mb-1 flex items-center justify-center gap-1.5 text-[10px]">
@@ -122,12 +123,12 @@ export function PlayField({
             </div>
             <div
               key={current.dakenId}
-              className="animate-plate-pop text-4xl font-black tracking-wide text-zinc-900 sm:text-5xl"
+              className="animate-plate-pop text-5xl font-black tracking-wide text-zinc-900"
             >
               <span className="text-emerald-600">{current.text.slice(0, matched)}</span>
               <span>{current.text.slice(matched)}</span>
             </div>
-            <div className="mt-1 font-mono text-sm tracking-[0.35em] text-zinc-500">
+            <div className="mt-2 font-mono text-lg tracking-[0.35em] text-zinc-500">
               <span className="text-emerald-600">{romajiHint(current.text.slice(0, matched))}</span>
               <span>{romajiHint(current.text.slice(matched))}</span>
             </div>
@@ -137,35 +138,13 @@ export function PlayField({
         )}
       </div>
 
-      {/* NEXT キュー */}
-      <ul className="space-y-px">
-        {upcoming.length === 0 && (
-          <li className="border border-zinc-300 px-2 py-1 text-[11px] text-zinc-500">
-            NEXT なし
-          </li>
-        )}
-        {upcoming.map((d, i) => (
-          <li
-            key={d.dakenId}
-            className="animate-queue-in flex items-center gap-2 border border-zinc-300 px-2 py-1"
-          >
-            <span className="w-8 shrink-0 text-[10px] font-bold text-zinc-500 tabular-nums">
-              {i + 1}
-            </span>
-            <span
-              className={`shrink-0 border px-1 text-[10px] font-bold ${TYPE_CHIP[d.type]}`}
-            >
-              {TYPE_LABEL[d.type]}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-sm font-bold text-zinc-900">
-              {d.text}
-            </span>
-            <span className="shrink-0 font-mono text-[10px] text-zinc-500">
-              {romajiHint(d.text)}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {/* 打鍵の進捗 */}
+      <div className="h-1.5 w-full bg-zinc-100">
+        <div
+          className="h-full bg-emerald-500 transition-[width] duration-100"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
     </Panel>
   );
 }

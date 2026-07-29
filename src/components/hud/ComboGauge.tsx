@@ -25,7 +25,7 @@ export function ComboGauge({ combo }: Props) {
       <div className="flex items-baseline gap-2">
         <span
           key={combo.value}
-          className={`animate-value-bump text-5xl font-black leading-none tabular-nums ${
+          className={`animate-value-bump text-4xl font-black leading-none tabular-nums ${
             hot ? "text-amber-500" : "text-red-600"
           }`}
         >
@@ -51,7 +51,7 @@ export function ComboGauge({ combo }: Props) {
         {Array.from({ length: GAUGE_FULL }).map((_, i) => (
           <span
             key={i}
-            className={`h-5 flex-1 border ${
+            className={`h-4 flex-1 border ${
               i < filled
                 ? hot
                   ? "border-amber-500 bg-amber-400"
