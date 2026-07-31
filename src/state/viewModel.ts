@@ -33,7 +33,7 @@ export interface IncomingAttack {
   receivedAtMs: number; // クライアント受信時刻（表示カウントダウンの基準・表示専用）
 }
 
-export type GameEventKind = "Welcome" | "Ko" | "GameOver";
+export type GameEventKind = "Welcome" | "Ko" | "GameOver" | "Matchmaking";
 
 /** EventLog 表示用の直近イベント（サーバー通知を写しただけ・派生計算なし）。 */
 export interface GameEvent {

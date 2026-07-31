@@ -71,6 +71,10 @@ export function ScreenRouter({
         <MatchmakingScreen
           status={state.matchmaking}
           statusReceivedAtMs={state.matchmakingReceivedAtMs}
+          // 待機中の進行はイベントログで伝える（残り秒数はサーバーが配信していないため）。
+          events={state.events.filter(
+            (e) => e.kind === "Matchmaking" || e.kind === "Welcome",
+          )}
           onLeave={() => {
             net.leave();
             actions.leaveMatchmaking();

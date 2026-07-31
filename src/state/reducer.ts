@@ -68,11 +68,18 @@ export function gameReducer(
     }
 
     case MessageType.MatchmakingStatus: {
-      return {
+      const p = payload as MatchmakingStatus;
+      // 待機中の動き（参加/離脱・カウントダウン開始/中止）をイベントとして記録する。
+      // サーバーは差分ではなく現在値を配信するため、直前の値との比較で「何が起きたか」を
+      // 復元する。判定はせず表示用の文言を作るだけ（docs/rules/01 §1,§3）。
+      const next = {
         ...state,
-        matchmaking: payload as MatchmakingStatus,
+        matchmaking: p,
         matchmakingReceivedAtMs: receivedAtMs,
       };
+      const msg = matchmakingEventMessage(state.matchmaking, p);
+      if (!msg) return next;
+      return { ...next, ...pushEvent(state, "Matchmaking", msg, receivedAtMs) };
     }
 
     case MessageType.MatchStart: {
@@ -94,6 +101,12 @@ export function gameReducer(
         combo: { value: 0, lastDelta: 0, lastReason: null },
         difficulty: { globalLevel: 0, personalLevel: 0, effectiveLevel: 0 },
         incomingAttacks: [],
+        ...pushEvent(
+          state,
+          "Matchmaking",
+          `マッチング完了・試合開始（${p.players.length} 人）`,
+          receivedAtMs,
+        ),
       };
     }
 
@@ -213,6 +226,42 @@ export function gameReducer(
       // 未対応 S2C（DifficultyUpdated 以外の将来型など）は state を変えない。
       return state;
   }
+}
+
+/**
+ * 直前の MatchmakingStatus と比較して、待機中に起きたことを1行の文言にする。
+ * 変化が無ければ null（イベントを積まない）。表示専用で判定はしない。
+ *
+ * サーバーは参加・離脱のたびに現在値を配信し、カウントダウン中は countdownMs に
+ * **残り時間ではなく全体秒数**を載せ直す（server: matchmaking.go broadcast）。
+ * そのため残り時間の表示には使えず、ここでは「開始した / 中止された」の検出にのみ使う。
+ */
+function matchmakingEventMessage(
+  prev: MatchmakingStatus | null,
+  next: MatchmakingStatus,
+): string | null {
+  // 初回受信＝待機に入った。
+  if (!prev) {
+    return `マッチングに参加（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+
+  const wasCounting = prev.countdownMs != null;
+  const isCounting = next.countdownMs != null;
+  if (!wasCounting && isCounting) {
+    return `最低人数に到達。まもなく開始（待機 ${next.waitingCount} 人）`;
+  }
+  if (wasCounting && !isCounting) {
+    return `最低人数を下回りカウントダウン中止（待機 ${next.waitingCount} 人）`;
+  }
+
+  const diff = next.waitingCount - prev.waitingCount;
+  if (diff > 0) {
+    return `プレイヤーが参加 +${diff}（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+  if (diff < 0) {
+    return `プレイヤーが離脱 ${diff}（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+  return null;
 }
 
 /** playerId から表示名を引く（未知IDは ID をそのまま出す）。表示専用。 */
