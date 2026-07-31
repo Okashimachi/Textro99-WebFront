@@ -1,14 +1,28 @@
-// リザルト画面。GameOver DTO を表示し、再マッチング/タイトルへの導線を出す。
+// リザルト表示。GameOver DTO を表示し、再マッチング/タイトルへの導線を出す。
 // rank==1 で優勝表示、それ以外は脱落表示。数値はサーバー由来（ローカル集計しない）。
+//
+// 観戦画面の上にモーダルとして重ねて使う（ResultOverlay）。閉じると背後のランキング・
+// 敵の状況が見える。試合が完全に終わる（サーバーが接続を切る）と、下部に
+// セッション終了までのカウントダウンが出る。
 import type { GameOver } from "@/proto/types";
 
 interface Props {
   result: GameOver;
   onRematch: () => void;
   onBackToTitle: () => void;
+  /** リザルトを閉じて観戦画面（ランキング・敵の状況）を見る。 */
+  onClose?: () => void;
+  /** セッション終了までの残り秒数。試合が完全に終わったときだけ非 null。 */
+  sessionEndInSec?: number | null;
 }
 
-export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
+export function ResultScreen({
+  result,
+  onRematch,
+  onBackToTitle,
+  onClose,
+  sessionEndInSec = null,
+}: Props) {
   const isWin = result.rank === 1;
   const { typingStats } = result;
   const accuracy =
@@ -41,7 +55,15 @@ export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
         <Stat label="経過時間" value={`${(typingStats.elapsedMs / 1000).toFixed(0)}s`} />
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="border border-zinc-300 bg-white px-6 py-2 hover:bg-zinc-100"
+          >
+            戦況を見る
+          </button>
+        )}
         <button
           onClick={onRematch}
           className="border border-red-700 bg-red-600 px-6 py-2 font-bold text-white hover:bg-red-700"
@@ -55,6 +77,16 @@ export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
           タイトルへ
         </button>
       </div>
+
+      {sessionEndInSec != null && (
+        <p className="text-sm text-zinc-500">
+          試合が終了しました。
+          <span className="mx-1 text-lg font-bold tabular-nums text-red-600">
+            {sessionEndInSec}
+          </span>
+          秒後にタイトルへ戻ります
+        </p>
+      )}
     </div>
   );
 }

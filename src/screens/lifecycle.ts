@@ -1,21 +1,20 @@
 // ============================================================================
 // 画面ライフサイクル状態機械
 //
-// タイトル → マッチング待機 → 試合中 → 観戦 → リザルト の共通ステートマシン。
+// タイトル → マッチング待機 → 試合中 → 観戦 の共通ステートマシン。
 // 画面フェーズは基本的に **サーバー state（ViewModel）から導出** する（描画は受信 state 経由）。
-// ローカル意図（タイトルから待機へ進む / リザルトからタイトルへ戻る）だけを併用する。
+// ローカル意図（タイトルから待機へ進む / リザルトを閉じてタイトルへ戻る）だけを併用する。
 //
-// 観戦は「試合中だが自分が脱落 → 自操作無効化」として表す（暫定・Issue #9）。
+// 観戦は「試合中だが自分は打てない → 自操作無効化」として表す（暫定・Issue #9）。
+// 自分の脱落だけでなく **自分の GameOver 受信後（リザルト表示中）** も観戦に含める。
+// リザルトは画面フェーズではなく観戦画面の上のモーダルとして重ねる（log-021）。
+// こうすることで、リザルトを見ている間もランキング・敵の状況のブロードキャストが
+// そのまま画面に反映され続ける。
 // ============================================================================
 
 import type { GameViewModel } from "@/state";
 
-export type ScreenPhase =
-  | "title"
-  | "matchmaking"
-  | "inMatch"
-  | "spectating"
-  | "result";
+export type ScreenPhase = "title" | "matchmaking" | "inMatch" | "spectating";
 
 /** タイトル/待機の分岐に使うローカル意図。サーバー state では表せない部分だけを持つ。 */
 export type LocalIntent =
@@ -32,20 +31,23 @@ export function isSelfAlive(state: GameViewModel): boolean {
 
 /**
  * ViewModel とローカル意図から現在の画面フェーズを導出する純関数。
- * 優先順位: リザルト > 試合中/観戦 > 待機 > タイトル。
+ * 優先順位: 離脱意図 > 試合中/観戦 > 待機 > タイトル。
+ *
+ * GameOver を受け取っても画面は観戦に留まる（リザルトはモーダルで重ねる）。
+ * リザルトを閉じてタイトルへ戻る(dismissedResult)・再マッチング(seeking)を選んだときだけ離脱する。
  */
 export function deriveScreenPhase(
   state: GameViewModel,
   intent: LocalIntent,
 ): ScreenPhase {
-  // リザルト：GameOver 受信後、ユーザーが操作するまで表示。
-  // 再マッチング(seeking)・タイトルへ(dismissedResult) を選ぶと、GameOver が残っていても離脱する。
-  if (state.gameOver && intent === "idle") {
-    return "result";
+  // 離脱意図が立っていれば、GameOver / matchId が残っていても試合画面へは戻さない。
+  if (intent === "dismissedResult") {
+    return "title";
   }
-  // 試合中：MatchStart 済み（matchId 有り）かつ GameOver 前。
-  if (state.matchId && !state.gameOver) {
-    return isSelfAlive(state) ? "inMatch" : "spectating";
+  // 試合中／観戦：MatchStart 済み（matchId 有り）。
+  // 自分が脱落済み、または GameOver 受信済みなら観戦（自操作は無効）。
+  if (state.matchId && intent !== "seeking") {
+    return isSelfAlive(state) && !state.gameOver ? "inMatch" : "spectating";
   }
   // 待機：ユーザーが参加表明中のみ。離脱(idle)でタイトルへ戻る。
   // サーバーの MatchmakingStatus 値は seeking 中に画面へ反映する。

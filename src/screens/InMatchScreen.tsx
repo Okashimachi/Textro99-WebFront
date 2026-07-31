@@ -36,8 +36,10 @@ interface Props {
   missCount?: number;
   /** 自分の表示名（プロフィール名）。ランキングの自分の行に出す。 */
   selfDisplayName?: string;
-  /** 観戦中（脱落済み）なら操作系をトーンダウンする。 */
+  /** 観戦中（脱落済み・自分の試合終了後）なら操作系をトーンダウンする。 */
   spectating?: boolean;
+  /** 観戦バナーの文言。省略時は脱落時の既定文言。 */
+  spectatingNote?: string;
   /** ヘッダー右側に置く開発ツール（練習モードのみ・dev 専用）。 */
   devTools?: React.ReactNode;
 }
@@ -49,6 +51,7 @@ export function InMatchScreen({
   missCount,
   selfDisplayName,
   spectating = false,
+  spectatingNote = "観戦モード（あなたは脱落済み・操作は無効）",
   devTools,
 }: Props) {
   // 残り時間（主ディスプレイの帯）。時間切れの確定はサーバー権威。
@@ -74,7 +77,7 @@ export function InMatchScreen({
 
       {spectating && (
         <div className="border border-red-500 bg-red-50 px-3 py-1.5 text-center text-xs font-bold text-red-800">
-          観戦モード（あなたは脱落済み・操作は無効）
+          {spectatingNote}
         </div>
       )}
 
