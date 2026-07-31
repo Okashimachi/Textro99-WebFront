@@ -20,6 +20,11 @@ interface Props {
   selfPlayerId: string | null;
   /** 外側パネルの追加クラス（高さの引き伸ばし用）。 */
   className?: string;
+  /**
+   * 表示の大きさ。試合中は compact（HUD の脇役）、決着後は large（主役）。
+   * large では危険域のセルを脈動させ、バッジ数を大きく出す（表示のみ）。
+   */
+  size?: "compact" | "large";
 }
 
 /** 盤面の列数・行数（自分を除く相手 98 人ぶん）。 */
@@ -45,7 +50,13 @@ function cellClass(p: PlayerView): string {
       : "border-emerald-300 bg-emerald-100 text-emerald-900";
 }
 
-export function PlayerGrid99({ players, selfPlayerId, className = "" }: Props) {
+export function PlayerGrid99({
+  players,
+  selfPlayerId,
+  className = "",
+  size = "compact",
+}: Props) {
+  const large = size === "large";
   // 自分は盤面に出さない（相手だけを一望する）。
   const opponents = players.filter((p) => p.playerId !== selfPlayerId);
   const aliveCount = opponents.filter((p) => p.alive).length;
@@ -62,7 +73,7 @@ export function PlayerGrid99({ players, selfPlayerId, className = "" }: Props) {
     >
       {/* 盤面はパネルの高さいっぱいに引き伸ばす（7列×14行）。 */}
       <div
-        className="grid min-h-0 flex-1 gap-1"
+        className={`grid min-h-0 flex-1 ${large ? "gap-1.5" : "gap-1"}`}
         style={{
           gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
@@ -72,9 +83,12 @@ export function PlayerGrid99({ players, selfPlayerId, className = "" }: Props) {
           <div
             key={p.playerId}
             title={`${p.displayName} / バッジ${p.badgeCount} / ${p.alive ? "生存" : "脱落"}`}
-            className={`flex items-center justify-center border text-[10px] font-black leading-none ${cellClass(
-              p,
-            )}`}
+            className={`flex items-center justify-center border font-black leading-none ${
+              large ? "text-sm" : "text-[10px]"
+            } ${cellClass(p)} ${
+              // 決着表示では、まだ生き残っていて危険域の相手を脈動させる（表示のみ）。
+              large && p.alive && stackRatioOf(p) >= 0.85 ? "animate-danger-pulse" : ""
+            }`}
           >
             {!p.alive ? "✕" : p.badgeCount > 0 ? p.badgeCount : ""}
           </div>

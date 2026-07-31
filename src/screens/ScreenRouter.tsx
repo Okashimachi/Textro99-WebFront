@@ -7,7 +7,7 @@ import type { ScreenActions } from "./useScreenPhase";
 import type { GameOver } from "@/proto/types";
 import { InMatchScreen } from "./InMatchScreen";
 import { MatchmakingScreen } from "./MatchmakingScreen";
-import { ResultOverlay } from "./ResultOverlay";
+import { MatchResultScreen } from "./MatchResultScreen";
 
 /** 画面から発火するマッチング関連の送信。実体は App が connection.send で配線する。 */
 export interface MatchmakingNet {
@@ -109,36 +109,33 @@ export function ScreenRouter({
       );
 
     case "spectating":
-      // 脱落後・自分の試合終了後もランキングと敵の状況を見せ続ける。
-      // 自分の結果が出ていれば、その上にリザルトモーダルを重ねる。
-      return (
-        <>
-          <InMatchScreen
+      // 自分の結果が出ていれば決着レイアウト（ランキング・敵の状況＋リザルト）。
+      // まだ結果が来ていない脱落直後は、試合中レイアウトのまま観戦する。
+      if (matchResult) {
+        return (
+          <MatchResultScreen
             state={state}
-            selectedStrategyId={selectedStrategyId}
-            typedPrefix={typedPrefix}
-            missCount={missCount}
+            result={matchResult}
             selfDisplayName={selfDisplayName}
-            spectating
-            spectatingNote={
-              matchResult
-                ? "あなたの試合は終了しました（結果は「リザルトを見る」から・操作は無効）"
-                : undefined
-            }
+            sessionEndDeadlineMs={sessionEndDeadlineMs}
+            onRematch={() => {
+              actions.rematch();
+              net.join();
+            }}
+            onBackToTitle={actions.backToTitle}
+            onSessionEnd={onSessionEnd ?? actions.backToTitle}
           />
-          {matchResult && (
-            <ResultOverlay
-              result={matchResult}
-              sessionEndDeadlineMs={sessionEndDeadlineMs}
-              onRematch={() => {
-                actions.rematch();
-                net.join();
-              }}
-              onBackToTitle={actions.backToTitle}
-              onSessionEnd={onSessionEnd ?? actions.backToTitle}
-            />
-          )}
-        </>
+        );
+      }
+      return (
+        <InMatchScreen
+          state={state}
+          selectedStrategyId={selectedStrategyId}
+          typedPrefix={typedPrefix}
+          missCount={missCount}
+          selfDisplayName={selfDisplayName}
+          spectating
+        />
       );
   }
 }
