@@ -7,4 +7,5 @@ export { Panel } from "./Panel";
 export { ComboGauge } from "./ComboGauge";
 export { StrategySelector } from "./StrategySelector";
 export { EventLog } from "./EventLog";
+export { IncomingAttacks } from "./IncomingAttacks";
 export { useNow } from "./useNow";

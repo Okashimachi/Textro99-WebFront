@@ -11,6 +11,7 @@ function player(i: number, alive = true): PlayerSummary {
     dakenStackLimit: 20,
     badgeCount: 0,
     alive,
+    rank: i, // 順位はサーバー確定値（#80）。モックでは並び順そのまま。
   };
 }
 
@@ -82,10 +83,22 @@ export const MOCK_SEQUENCE: { label: string; envelope: Envelope }[] = [
     },
   },
   {
-    label: "OffsetResolved (w1消化)",
+    label: "DakenIssued (被弾を3手先へ割り込み)",
     envelope: {
-      type: MessageType.OffsetResolved,
-      payload: { warningId: "w1", offsetAmount: 20, remainderDakenCount: 1 },
+      type: MessageType.DakenIssued,
+      payload: {
+        daken: [
+          {
+            dakenId: "d-in-1",
+            type: "EnemySent",
+            text: "ばとる",
+            difficultyLevel: 0,
+            timeLimitMs: 5000,
+            issuedAtServerTimeMs: 0,
+          },
+        ],
+        insertIndex: 3,
+      },
     },
   },
   {
@@ -102,10 +115,24 @@ export const MOCK_SEQUENCE: { label: string; envelope: Envelope }[] = [
     },
   },
   {
+    label: "ComboUpdated (ミス/時間切れで0リセット)",
+    envelope: {
+      type: MessageType.ComboUpdated,
+      payload: { comboValue: 0, delta: -12, reason: "Miss" },
+    },
+  },
+  {
     label: "KoNotified",
     envelope: {
       type: MessageType.KoNotified,
       payload: { attackerId: "p1", victimId: "p2", badgesTransferred: 1 },
+    },
+  },
+  {
+    label: "KoNotified (自滅・attackerId=null)",
+    envelope: {
+      type: MessageType.KoNotified,
+      payload: { attackerId: null, victimId: "p3", badgesTransferred: 0 },
     },
   },
   {

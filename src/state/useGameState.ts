@@ -15,8 +15,6 @@ const S2C_TYPES: MessageType[] = [
   MessageType.ComboUpdated,
   MessageType.DifficultyUpdated,
   MessageType.AttackIncoming,
-  MessageType.AttackFailed,
-  MessageType.OffsetResolved,
   MessageType.DakenStackUpdated,
   MessageType.KoNotified,
   MessageType.PlayerListUpdated,

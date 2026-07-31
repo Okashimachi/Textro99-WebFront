@@ -21,18 +21,6 @@ const KIND_STYLE: Record<
     tag: "bg-red-600",
     label: "撃破",
   },
-  AttackFailed: {
-    mark: "⚔",
-    box: "border-amber-500 bg-amber-100 text-amber-900",
-    tag: "bg-amber-500",
-    label: "攻撃",
-  },
-  OffsetResolved: {
-    mark: "🛡",
-    box: "border-emerald-500 bg-emerald-100 text-emerald-900",
-    tag: "bg-emerald-600",
-    label: "相殺",
-  },
   GameOver: {
     mark: "🏁",
     box: "border-sky-500 bg-sky-100 text-sky-900",

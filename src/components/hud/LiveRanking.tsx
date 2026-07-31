@@ -1,7 +1,7 @@
-// 試合中のリアルタイム順位（近似）。deriveRanking の結果を並べるだけの表示。
+// 試合中のリアルタイム順位。サーバー確定順位（PlayerSummary.rank）で並べるだけの表示。
 // 表示方針: 等幅の順位表。自分の行は黒背景で反転させ、スクロールせずに見つけられるようにする。
 import type { PlayerView } from "@/state";
-import { deriveRanking, type RankedPlayer } from "@/state/ranking";
+import { sortByServerRank, type RankedPlayer } from "@/state/ranking";
 import { Panel } from "./Panel";
 
 interface Props {
@@ -29,17 +29,19 @@ export function LiveRanking({
   limit = 14,
   className = "",
 }: Props) {
-  const ranked = deriveRanking(players, selfPlayerId);
+  const ranked = sortByServerRank(players, selfPlayerId);
   const total = ranked.length;
   const shown = ranked.slice(0, limit);
-  const selfRow = ranked.find((r) => r.isSelf);
-  const selfOutside = selfRow && selfRow.rank > limit ? selfRow : null;
+  const selfIndex = ranked.findIndex((r) => r.isSelf);
+  const selfRow = selfIndex >= 0 ? ranked[selfIndex] : undefined;
+  // 表示は先頭 limit 件のみ。自分がそこに入らないときだけ末尾に自分の行を足す。
+  const selfOutside = selfIndex >= limit ? ranked[selfIndex] : null;
 
   return (
     <Panel
       label="ランキング"
       tone="badge"
-      right={selfRow ? `自分 ${selfRow.rank} / ${total}` : `${total}人`}
+      right={selfRow ? `自分 ${rankLabel(selfRow.rank)} / ${total}` : `${total}人`}
       className={className}
       bodyClassName="p-2"
     >
@@ -58,6 +60,11 @@ export function LiveRanking({
   );
 }
 
+/** サーバー順位の表示文字列。0（未確定）はダッシュ。 */
+function rankLabel(rank: number): string {
+  return rank > 0 ? String(rank) : "—";
+}
+
 function Row({ r, selfDisplayName }: { r: RankedPlayer; selfDisplayName?: string }) {
   const name = r.isSelf && selfDisplayName ? selfDisplayName : r.player.displayName;
   return (
@@ -71,7 +78,7 @@ function Row({ r, selfDisplayName }: { r: RankedPlayer; selfDisplayName?: string
           MEDAL[r.rank] ?? (r.isSelf ? "text-white" : "text-zinc-500")
         }`}
       >
-        {r.rank}
+        {rankLabel(r.rank)}
       </span>
       <span
         className={`min-w-0 flex-1 truncate font-bold ${
