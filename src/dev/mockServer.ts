@@ -26,7 +26,8 @@ const WORDS = [
   "たいぴんぐ", "こんぼ", "こうげき", "しょうり", "ぷれいやー", "ばとる",
 ];
 
-const randomWord = () => WORDS[Math.floor(Math.random() * WORDS.length)];
+/** かなお題をランダムに1件返す（dev ツールからも使う）。 */
+export const randomWord = () => WORDS[Math.floor(Math.random() * WORDS.length)];
 
 export interface MockServerOptions {
   /** 自分の表示上の playerId。 */
@@ -51,11 +52,15 @@ export function startMockServer(
     if (!stopped) connection.simulateReceive({ type, payload } as Envelope);
   };
 
+  // 練習モードでも種別ごとの色分け（通常/被弾/トラップ）を確認できるよう、
+  // 数件に1件だけ被弾・トラップを混ぜる（開発用スタブの見た目確認用）。
   const nextDaken = (): DakenInstance => {
     seq += 1;
+    const type: DakenInstance["type"] =
+      seq % 7 === 0 ? "Trap" : seq % 3 === 0 ? "EnemySent" : "Normal";
     return {
       dakenId: `mock-${seq}`,
-      type: "Normal",
+      type,
       text: randomWord(),
       difficultyLevel: 0,
       timeLimitMs: 999_999, // ローカルテストでは時間切れさせない
@@ -91,6 +96,11 @@ export function startMockServer(
         personalDifficultyStep: 20,
         difficultyMaxLevel: 10,
       },
+    });
+    // 先読み分（NEXT 表示の確認用）。実サーバーも複数のお題を保持するため、
+    // 練習モードでも常に数件先まで積んだ状態にしておく。
+    recv(MessageType.DakenIssued, {
+      daken: [nextDaken(), nextDaken(), nextDaken(), nextDaken()],
     });
   };
 

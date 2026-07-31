@@ -21,13 +21,13 @@ export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
   return (
     <div className="flex flex-col items-center gap-6 py-12">
       <div
-        className={`text-center ${isWin ? "text-yellow-300" : "text-slate-200"}`}
+        className={`text-center ${isWin ? "text-red-600" : "text-zinc-900"}`}
       >
-        <div className="text-sm uppercase tracking-widest text-slate-400">Result</div>
+        <div className="text-sm uppercase tracking-widest text-zinc-500">Result</div>
         <div className="mt-1 text-6xl font-black">
           {isWin ? "優勝！" : `${result.rank} 位`}
         </div>
-        {!isWin && <div className="mt-1 text-slate-400">脱落しました</div>}
+        {!isWin && <div className="mt-1 text-zinc-500">脱落しました</div>}
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -44,13 +44,13 @@ export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
       <div className="flex gap-3">
         <button
           onClick={onRematch}
-          className="rounded bg-emerald-600 px-6 py-2 font-bold hover:bg-emerald-500"
+          className="border border-red-700 bg-red-600 px-6 py-2 font-bold text-white hover:bg-red-700"
         >
           再マッチング
         </button>
         <button
           onClick={onBackToTitle}
-          className="rounded bg-slate-600 px-6 py-2 hover:bg-slate-500"
+          className="border border-zinc-300 bg-white px-6 py-2 hover:bg-zinc-100"
         >
           タイトルへ
         </button>
@@ -61,8 +61,8 @@ export function ResultScreen({ result, onRematch, onBackToTitle }: Props) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/60 px-4 py-3 text-center">
-      <div className="text-xs text-slate-400">{label}</div>
+    <div className="border border-zinc-300 bg-white px-4 py-3 text-center">
+      <div className="text-xs text-zinc-500">{label}</div>
       <div className="mt-0.5 text-2xl font-bold tabular-nums">{value}</div>
     </div>
   );

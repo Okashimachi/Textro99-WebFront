@@ -33,6 +33,8 @@ interface Props {
   onToggleDevTools?: (show: boolean) => void;
   /** 開始カウントダウンの終了時刻(ms epoch)。マッチング完了直後のみ非 null。 */
   startCountdownDeadlineMs?: number | null;
+  /** 試合中ヘッダー右側の開発ツール（練習モードのみ）。 */
+  inMatchDevTools?: React.ReactNode;
 }
 
 export function ScreenRouter({
@@ -47,16 +49,17 @@ export function ScreenRouter({
   showDevTools,
   onToggleDevTools,
   startCountdownDeadlineMs,
+  inMatchDevTools,
 }: Props) {
   switch (phase) {
     case "title":
       // 実タイトルは setup フロー（App）が持つ。ここに来るのは接続〜MatchStart 待ちの間。
       return (
         <Placeholder title="接続中…">
-          <p className="text-sm text-slate-400">サーバーに接続しています（起動に数秒かかることがあります）</p>
+          <p className="text-sm text-zinc-500">サーバーに接続しています（起動に数秒かかることがあります）</p>
           <button
             onClick={actions.backToTitle}
-            className="rounded bg-slate-600 px-4 py-2 text-sm hover:bg-slate-500"
+            className="border border-zinc-300 bg-white px-4 py-2 text-sm hover:bg-zinc-100"
           >
             キャンセル
           </button>
@@ -86,6 +89,7 @@ export function ScreenRouter({
           typedPrefix={typedPrefix}
           missCount={missCount}
           selfDisplayName={selfDisplayName}
+          devTools={inMatchDevTools}
         />
       );
 

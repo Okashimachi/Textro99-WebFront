@@ -18,6 +18,7 @@ import { useInputController } from "@/input";
 import { useTypingJudge } from "@/typing";
 import { useProfile } from "@/profile";
 import { startMockServer } from "@/dev/mockServer";
+import { InMatchDevTools } from "@/dev/InMatchDevTools";
 import { RawStateDebugPane } from "@/components/RawStateDebugPane";
 import { MOCK_SEQUENCE } from "@/dev/mockMessages";
 
@@ -165,6 +166,18 @@ export function App() {
         showDevTools={showDevTools}
         onToggleDevTools={setShowDevTools}
         startCountdownDeadlineMs={startCountdownDeadlineMs}
+        inMatchDevTools={
+          // 練習（フロント完結）モードのみ。オンライン対戦では出さない。
+          backend === "mock" ? (
+            <InMatchDevTools
+              connection={connection}
+              activeDaken={state.activeDaken}
+              dakenStack={state.dakenStack}
+              comboValue={state.combo.value}
+              onManualClear={onClear}
+            />
+          ) : undefined
+        }
       />
     );
   }
@@ -172,10 +185,11 @@ export function App() {
   const statusLabel = backend === "mock" ? "フロント完結（ローカル）" : status;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
-      <header className="border-b border-slate-700 px-4 py-2">
-        <p className="text-xs text-slate-400">
-          テキストロ99 / 画面: {stage === "in-game" ? phase : stage}
+    <div className="min-h-screen bg-zinc-100 text-zinc-900">
+      <header className="flex items-center gap-2 border-b border-zinc-300 bg-white px-3 py-1.5">
+        <span className="text-xs font-black tracking-wide text-red-600">テキストロ99</span>
+        <p className="text-[11px] text-zinc-500">
+          画面: {stage === "in-game" ? phase : stage}
           {stage === "in-game" &&
             showDevTools &&
             ` / 接続: ${statusLabel} / 生存: ${state.aliveCount}`}
@@ -183,49 +197,17 @@ export function App() {
         </p>
       </header>
 
-      <main className="px-4">{body}</main>
-
-      {/*
-        手動クリア報告ボタン。かなお題（例「ねこ」）は直接照合方式で打鍵できないことがあり、
-        その場合の DakenClearReport 疎通用に実発行 dakenId で報告する。
-        ※ これは開発ツール表示（showDevTools）に関わらず in-game 中「常に表示」する。
-      */}
-      {stage === "in-game" && (
-        <section className="p-4 text-xs">
-          <button
-            disabled={state.activeDaken.length === 0}
-            onClick={() => {
-              const daken = state.activeDaken[0];
-              if (!daken) return;
-              // onClear 経由で送る（送信＋現在お題の active 除去をまとめて行う）。
-              // connection.send を直接呼ぶと DakenExpired が注入されず、次のお題が
-              // 追加されるだけで先頭が入れ替わらない＝画面上お題が進まないため。
-              onClear({
-                dakenId: daken.dakenId,
-                isMiss: false,
-                missCount: 0,
-                elapsedMs: 0,
-              } satisfies DakenClearReport);
-            }}
-            className="rounded bg-indigo-700 px-2 py-1 text-xs enabled:hover:bg-indigo-600 disabled:opacity-40"
-          >
-            現在のダケンを手動クリア報告（かなお題の疎通用）
-            {state.activeDaken[0]
-              ? ` [${state.activeDaken[0].dakenId} “${state.activeDaken[0].text}”]`
-              : ""}
-          </button>
-        </section>
-      )}
+      <main className="px-3">{body}</main>
 
       {/* dev: 送信ログ・S2C 注入・生 state（in-game かつ 開発ツール表示 ON のときのみ） */}
       {stage === "in-game" && showDevTools && (
         <>
           <section className="px-4 pb-4 text-xs">
-            <h2 className="mb-1 font-bold text-slate-300">
+            <h2 className="mb-1 font-bold text-zinc-900">
               入力送信ログ（inputActive: {String(inputActive)} / 戦略:{" "}
               {selectedStrategyId ?? "—"} / 打鍵: {typed || "—"} / ミス: {missCount}）
             </h2>
-            <ul className="space-y-0.5 font-mono text-slate-400">
+            <ul className="space-y-0.5 font-mono text-zinc-500">
               {sentLog.map((s, i) => (
                 <li key={i}>
                   {s.sent ? "→" : "×"} {s.envelope.type} {JSON.stringify(s.envelope.payload)}
@@ -235,7 +217,7 @@ export function App() {
           </section>
 
           <section className="p-4">
-            <h2 className="mb-2 text-sm font-bold text-slate-300">
+            <h2 className="mb-2 text-sm font-bold text-zinc-900">
               Dev モック（S2C 手動注入・単体検証）
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -246,8 +228,8 @@ export function App() {
                     connection.simulateReceive(m.envelope);
                     setStep(i + 1);
                   }}
-                  className={`rounded px-2 py-1 text-xs ${
-                    i < step ? "bg-emerald-700" : "bg-slate-700 hover:bg-slate-600"
+                  className={`px-2 py-1 text-xs ${
+                    i < step ? "border border-red-700 bg-red-600 text-white" : "border border-zinc-300 bg-white hover:bg-zinc-100"
                   }`}
                 >
                   {i + 1}. {m.label}
