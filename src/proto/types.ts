@@ -2,8 +2,8 @@
 // VENDORED FILE — 手コピー（改変禁止）
 //
 //   取得元 : Textro99-Proto / ts/types.ts
-//   版     : v0.1.1 (commit 66e00fb)
-//   取得日 : 2026-07-30
+//   版     : v0.1.1+ (textro-main commit 42fb05e / MatchmakingStatus 拡張)
+//   取得日 : 2026-08-01
 //
 // このファイルは Textro99-Proto の写しです。契約の正典は Proto 側であり、
 // **このリポジトリでは内容を編集しません**（docs/rules/01-責務と絶対原則.md）。
@@ -208,9 +208,15 @@ export interface GameOver {
   typingStats: TypingStats;
 }
 
-// countdownMs はカウントダウン中のみ（Waiting 中は省略）。
+export interface WaitingPlayer {
+  displayName: string;
+}
+
+// countdownMs はカウントダウン中のみ（Waiting 中は省略）。値は残り時間（ms）。
+// players は現在待機中のプレイヤー名一覧。
 export interface MatchmakingStatus {
   waitingCount: number;
   minPlayers: number;
   countdownMs?: number;
+  players?: WaitingPlayer[];
 }
