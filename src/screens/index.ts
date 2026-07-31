@@ -13,6 +13,6 @@ export {
 export { ScreenRouter, type MatchmakingNet } from "./ScreenRouter";
 export { InMatchScreen } from "./InMatchScreen";
 export { MatchmakingScreen } from "./MatchmakingScreen";
-export { ResultScreen } from "./ResultScreen";
-export { ResultOverlay } from "./ResultOverlay";
+export { MatchResultScreen } from "./MatchResultScreen";
+export { ResultBoard } from "./ResultBoard";
 export { SESSION_END_COUNTDOWN_MS } from "./sessionEnd";

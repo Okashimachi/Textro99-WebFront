@@ -13,6 +13,11 @@ interface Props {
   limit?: number;
   /** 外側パネルの追加クラス（高さの引き伸ばし用）。 */
   className?: string;
+  /**
+   * 表示の大きさ。試合中は compact（HUD の脇役）、決着後は large（主役）。
+   * 見た目だけの切替で、並び順・値はどちらもサーバー由来のまま。
+   */
+  size?: "compact" | "large";
 }
 
 // 上位3位のメダル色（表示だけ）。
@@ -28,6 +33,7 @@ export function LiveRanking({
   selfDisplayName,
   limit = 14,
   className = "",
+  size = "compact",
 }: Props) {
   const ranked = sortByServerRank(players, selfPlayerId);
   const total = ranked.length;
@@ -45,14 +51,25 @@ export function LiveRanking({
       className={className}
       bodyClassName="p-2"
     >
-      <ul className="space-y-px">
+      <ul
+        className={
+          size === "large"
+            ? "flex h-full min-h-0 flex-col gap-1 overflow-hidden"
+            : "space-y-px"
+        }
+      >
         {shown.map((r) => (
-          <Row key={r.player.playerId} r={r} selfDisplayName={selfDisplayName} />
+          <Row
+            key={r.player.playerId}
+            r={r}
+            selfDisplayName={selfDisplayName}
+            size={size}
+          />
         ))}
         {selfOutside && (
           <>
             <li className="text-center text-[10px] leading-none text-zinc-500">⋯</li>
-            <Row r={selfOutside} selfDisplayName={selfDisplayName} />
+            <Row r={selfOutside} selfDisplayName={selfDisplayName} size={size} />
           </>
         )}
       </ul>
@@ -65,34 +82,63 @@ function rankLabel(rank: number): string {
   return rank > 0 ? String(rank) : "—";
 }
 
-function Row({ r, selfDisplayName }: { r: RankedPlayer; selfDisplayName?: string }) {
+function Row({
+  r,
+  selfDisplayName,
+  size,
+}: {
+  r: RankedPlayer;
+  selfDisplayName?: string;
+  size: "compact" | "large";
+}) {
   const name = r.isSelf && selfDisplayName ? selfDisplayName : r.player.displayName;
+  const large = size === "large";
+  // 決着後は上位3位を色帯で立たせ、自分の行を太い枠で見つけやすくする（表示のみ）。
+  const podium = large && !r.isSelf ? PODIUM_ROW[r.rank] : undefined;
+
   return (
     <li
-      className={`flex items-center gap-2 px-1.5 py-1 text-xs tabular-nums ${
-        r.isSelf ? "bg-zinc-900 text-white" : "text-zinc-900"
-      } ${!r.player.alive ? "opacity-45" : ""}`}
+      className={`flex items-center tabular-nums ${
+        large
+          ? `min-h-[2.25rem] max-h-14 flex-1 gap-3 border px-3 ${
+              r.isSelf
+                ? "border-zinc-900 bg-zinc-900 text-white"
+                : (podium ?? "border-zinc-200 bg-white text-zinc-900")
+            }`
+          : `gap-2 px-1.5 py-1 text-xs ${
+              r.isSelf ? "bg-zinc-900 text-white" : "text-zinc-900"
+            }`
+      } ${!r.player.alive ? (large ? "opacity-60" : "opacity-45") : ""}`}
     >
       <span
-        className={`flex w-5 shrink-0 items-center justify-center font-black ${
-          MEDAL[r.rank] ?? (r.isSelf ? "text-white" : "text-zinc-500")
-        }`}
+        key={r.rank}
+        className={`flex shrink-0 items-center justify-center font-black ${
+          large ? "w-10 animate-value-bump text-3xl" : "w-5"
+        } ${MEDAL[r.rank] ?? (r.isSelf ? "text-white" : "text-zinc-500")}`}
       >
         {rankLabel(r.rank)}
       </span>
       <span
-        className={`min-w-0 flex-1 truncate font-bold ${
+        className={`min-w-0 flex-1 truncate font-bold ${large ? "text-base" : ""} ${
           !r.player.alive ? "line-through" : ""
         }`}
       >
         {name}
-        {r.isSelf && <span className="ml-1 text-[10px] font-normal">(あなた)</span>}
+        {r.isSelf && (
+          <span className={`ml-1 font-normal ${large ? "text-xs" : "text-[10px]"}`}>
+            (あなた)
+          </span>
+        )}
       </span>
       {!r.player.alive && (
-        <span className="shrink-0 text-[10px] font-bold text-red-600">脱落</span>
+        <span
+          className={`shrink-0 font-bold text-red-600 ${large ? "text-xs" : "text-[10px]"}`}
+        >
+          脱落
+        </span>
       )}
       <span
-        className={`shrink-0 text-[11px] font-bold ${
+        className={`shrink-0 font-bold ${large ? "text-lg" : "text-[11px]"} ${
           r.isSelf ? "text-amber-300" : "text-amber-600"
         }`}
       >
@@ -101,3 +147,10 @@ function Row({ r, selfDisplayName }: { r: RankedPlayer; selfDisplayName?: string
     </li>
   );
 }
+
+/** 決着表示での上位3位の行スタイル（表示のみ）。 */
+const PODIUM_ROW: Record<number, string> = {
+  1: "border-amber-400 bg-amber-50 text-amber-900",
+  2: "border-zinc-400 bg-zinc-100 text-zinc-900",
+  3: "border-amber-700/40 bg-amber-100/60 text-amber-900",
+};
