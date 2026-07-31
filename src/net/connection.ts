@@ -32,8 +32,10 @@ export interface WsConnectionOptions {
   url?: string;
   /** 自動再接続を行うか（既定 true）。 */
   autoReconnect?: boolean;
-  /** 再接続の待機時間（ms, 既定 1000）。 */
+  /** 再接続の初期待機時間（ms, 既定 1000）。失敗ごとに倍増し maxReconnectDelayMs で頭打ち。 */
   reconnectDelayMs?: number;
+  /** 再接続の最大待機時間（ms, 既定 30000）。 */
+  maxReconnectDelayMs?: number;
 }
 
 /**
@@ -44,7 +46,8 @@ export class WsConnection {
   private ws: WebSocket | null = null;
   private readonly url: string;
   private readonly autoReconnect: boolean;
-  private readonly reconnectDelayMs: number;
+  private readonly baseReconnectDelayMs: number;
+  private readonly maxReconnectDelayMs: number;
 
   private readonly handlers = new Map<string, Set<MessageHandler>>();
   private readonly statusListeners = new Set<StatusListener>();
@@ -52,11 +55,13 @@ export class WsConnection {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private manuallyClosed = false;
   private _status: ConnectionStatus = "idle";
+  private reconnectAttempts = 0;
 
   constructor(options: WsConnectionOptions = {}) {
     this.url = options.url ?? import.meta.env.VITE_WS_URL;
     this.autoReconnect = options.autoReconnect ?? true;
-    this.reconnectDelayMs = options.reconnectDelayMs ?? 1000;
+    this.baseReconnectDelayMs = options.reconnectDelayMs ?? 1000;
+    this.maxReconnectDelayMs = options.maxReconnectDelayMs ?? 30_000;
   }
 
   get status(): ConnectionStatus {
@@ -80,7 +85,10 @@ export class WsConnection {
     const ws = new WebSocket(this.url);
     this.ws = ws;
 
-    ws.onopen = () => this.setStatus("open");
+    ws.onopen = () => {
+      this.reconnectAttempts = 0;
+      this.setStatus("open");
+    };
     ws.onmessage = (ev) => this.handleRawMessage(ev.data);
     ws.onerror = () => {
       // onclose が続けて呼ばれるため、ここでは状態遷移しない。
@@ -118,6 +126,7 @@ export class WsConnection {
       old.onclose = null;
       old.close();
     }
+    this.reconnectAttempts = 0;
     this.setStatus("closed");
     this.connect();
   }
@@ -198,10 +207,15 @@ export class WsConnection {
   private scheduleReconnect(): void {
     if (this.reconnectTimer) return;
     this.setStatus("reconnecting");
+    const delay = Math.min(
+      this.baseReconnectDelayMs * 2 ** this.reconnectAttempts,
+      this.maxReconnectDelayMs,
+    );
+    this.reconnectAttempts++;
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.connect();
-    }, this.reconnectDelayMs);
+    }, delay);
   }
 
   private handleRawMessage(raw: unknown): void {
