@@ -2,8 +2,8 @@
 // VENDORED FILE — 手コピー（改変禁止）
 //
 //   取得元 : Textro99-Proto / ts/types.ts
-//   版     : v0.1.0 (commit f47fcf5)
-//   取得日 : 2026-07-23
+//   版     : v0.1.1 (commit 66e00fb)
+//   取得日 : 2026-07-30
 //
 // このファイルは Textro99-Proto の写しです。契約の正典は Proto 側であり、
 // **このリポジトリでは内容を編集しません**（docs/rules/01-責務と絶対原則.md）。
@@ -44,6 +44,7 @@ export interface PlayerSummary {
   dakenStackLimit: number;
   badgeCount: number;
   alive: boolean;
+  rank: number; // 試合中のサーバー確定順位（1=首位・#80）。0=未確定
 }
 
 // GameParameters の唯一の on-wire 契約（公開サブセット）。
@@ -67,7 +68,6 @@ export interface Envelope {
 export const MessageType = {
   // C2S
   DakenClearReport: "DakenClearReport",
-  AttackRequest: "AttackRequest",
   StrategySelect: "StrategySelect",
   MatchmakingJoin: "MatchmakingJoin",
   MatchmakingLeave: "MatchmakingLeave",
@@ -79,8 +79,6 @@ export const MessageType = {
   ComboUpdated: "ComboUpdated",
   DifficultyUpdated: "DifficultyUpdated",
   AttackIncoming: "AttackIncoming",
-  AttackFailed: "AttackFailed",
-  OffsetResolved: "OffsetResolved",
   DakenStackUpdated: "DakenStackUpdated",
   KoNotified: "KoNotified",
   PlayerListUpdated: "PlayerListUpdated",
@@ -102,17 +100,14 @@ export interface DakenClearReport {
   elapsedMs: number; // 主に表示・統計用
 }
 
-// consumedCombo は将来の部分消費UI用。現状サーバーは無視し全消費（Enter=全消費）。
-export interface AttackRequest {
-  consumedCombo: number;
-}
-
 // strategyId は 0-9。未選択時の既定は 4（ランダム）。
 export interface StrategySelect {
   strategyId: number;
 }
 
-export type MatchmakingJoin = Record<string, never>;
+export interface MatchmakingJoin {
+  displayName?: string; // 盤面表示名（任意）。空/未指定ならサーバーがフォールバック名を割り当てる
+}
 export type MatchmakingLeave = Record<string, never>;
 
 // ── S2C メッセージ ───────────────────────────────────────
@@ -131,8 +126,10 @@ export interface MatchStart {
 }
 
 // 1回の被弾で複数ダケンを一括送出するため配列。
+// insertIndex はお題キューへの挿入位置（#81）。省略なら末尾に追加。被弾は途中位置（既定3手先）へ割り込ませる。
 export interface DakenIssued {
   daken: DakenInstance[];
+  insertIndex?: number;
 }
 
 export interface DakenExpired {
@@ -159,22 +156,6 @@ export interface AttackIncoming {
   attackerId: PlayerId;
   power: number;
   graceMs: number;
-}
-
-export type AttackFailReason = "NoTarget" | "NoCombo";
-
-// コンボは消費されない旨のフィードバック。
-export interface AttackFailed {
-  reason: AttackFailReason;
-}
-
-// offsetAmount は威力単位、remainderDakenCount は変換後の着弾個数。
-// 撃ち返しが成立した場合のみ counterAttackWarningId で新規予告を紐付ける（不成立なら省略）。
-export interface OffsetResolved {
-  warningId: WarningId;
-  offsetAmount: number;
-  remainderDakenCount: number;
-  counterAttackWarningId?: WarningId;
 }
 
 export interface DakenStackUpdated {
