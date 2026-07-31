@@ -24,7 +24,13 @@ import {
   type MatchmakingJoin,
 } from "@/proto/types";
 import { useGameState } from "@/state";
-import { ScreenRouter, useScreenPhase, type ScreenActions } from "@/screens";
+import {
+  ScreenRouter,
+  useScreenPhase,
+  SESSION_END_COUNTDOWN_MS,
+  type ScreenActions,
+} from "@/screens";
+import { isConnectionFinished } from "@/screens/sessionEnd";
 import { TitleScreen, ModeSelectScreen, NameEntryScreen, type PlayMode } from "@/screens/setup";
 import { useInputController } from "@/input";
 import { useTypingJudge } from "@/typing";
@@ -55,7 +61,8 @@ export function App() {
 
   const { profile, setDisplayName } = useProfile();
   const { state, lastEnvelope } = useGameState(connection);
-  const { phase, inputActive, actions, startCountdownDeadlineMs } = useScreenPhase(state);
+  const { phase, inputActive, actions, startCountdownDeadlineMs, matchResult } =
+    useScreenPhase(state);
   const [step, setStep] = useState(0);
   const [sentLog, setSentLog] = useState<{ envelope: Envelope; sent: boolean }[]>([]);
 
@@ -65,16 +72,31 @@ export function App() {
   // サーバーは接続後の最初の1通を参加メッセージとして読み、そこで盤面の表示名を確定する
   // （送らない・遅いと接続IDへフォールバックする）。再接続＝新しい試合登録なので、
   // open するたびに送る（1接続=1試合の契約）。
+  //
+  // ただし送るのは「参加する意思があるとき」だけ（joinArmed）。リザルト表示中に
+  // 送ってしまうと、放置しているだけで次の試合へ登録されてしまう（自動で次試合に
+  // 送り込まれるバグの原因）。自分の GameOver を受け取った時点で意思を降ろす。
   const displayNameRef = useRef(profile.displayName);
   displayNameRef.current = profile.displayName;
+  const joinArmedRef = useRef(false);
   useEffect(() => {
     return connection.onStatusChange((s) => {
       if (s !== "open") return;
+      if (!joinArmedRef.current) return;
       connection.send(MessageType.MatchmakingJoin, {
         displayName: displayNameRef.current,
       } satisfies MatchmakingJoin);
     });
   }, [connection]);
+
+  // 自分の試合が終わったら、この接続で次の試合へ行かないよう封をする。
+  //   - 参加意思を降ろす（再接続しても MatchmakingJoin を送らない）
+  //   - 自動再接続も止める（サーバーが切ったらそのまま切れたままにする）
+  useEffect(() => {
+    if (!matchResult) return;
+    joinArmedRef.current = false;
+    connection.setAutoReconnect(false);
+  }, [matchResult, connection]);
 
   // 接続/モックは in-game の間だけ動かす。title/mode/name では接続しない。
   useEffect(() => {
@@ -131,29 +153,60 @@ export function App() {
       setDisplayName(name);
       setBackend(entry === "play" || pendingMode === "online" ? "server" : "mock");
       // 名前は接続 open 時の MatchmakingJoin で送る（上の onStatusChange）。
+      joinArmedRef.current = true;
+      connection.setAutoReconnect(true);
       actions.seekMatch(); // MatchStart までは matchmaking 表示
       setStage("in-game");
     },
-    [entry, pendingMode, actions, setDisplayName],
+    [entry, pendingMode, actions, setDisplayName, connection],
   );
 
+  // 試合が完全に終わった時刻（サーバーが接続を切った時点）から数える終了カウントダウン。
+  // 到達でセッションを切ってタイトルへ戻す。練習（mock）は接続が無いので対象外。
+  const [sessionEndDeadlineMs, setSessionEndDeadlineMs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!matchResult || backend !== "server" || stage !== "in-game") {
+      setSessionEndDeadlineMs(null);
+      return;
+    }
+    if (!isConnectionFinished(status)) return;
+    // 一度決めた期限は据え置く（status が揺れても伸ばさない）。
+    setSessionEndDeadlineMs((prev) => prev ?? Date.now() + SESSION_END_COUNTDOWN_MS);
+  }, [matchResult, backend, stage, status]);
+
   const exitToTitle = useCallback(() => {
+    // セッションを明示的に切ってから戻る（自動再接続も止まる）。
+    connection.disconnect();
+    joinArmedRef.current = false;
+    setSessionEndDeadlineMs(null);
     actions.backToTitle();
     setStage("title");
-  }, [actions]);
+  }, [actions, connection]);
 
   // ScreenRouter に渡す合成 actions（stage 遷移を織り込む）。
   const routerActions: ScreenActions = useMemo(
     () => ({
-      seekMatch: actions.seekMatch,
+      seekMatch: () => {
+        joinArmedRef.current = true;
+        connection.setAutoReconnect(true);
+        actions.seekMatch();
+      },
       backToTitle: exitToTitle,
       leaveMatchmaking: () => {
+        joinArmedRef.current = false;
         actions.leaveMatchmaking();
         setStage("title");
       },
-      rematch: actions.rematch,
+      // 再マッチング＝新しいセッションを張り直す。参加意思を立て直してから join する
+      // （net.join は ScreenRouter 側でこの直後に呼ばれる）。
+      rematch: () => {
+        joinArmedRef.current = true;
+        connection.setAutoReconnect(true);
+        setSessionEndDeadlineMs(null);
+        actions.rematch();
+      },
     }),
-    [actions, exitToTitle],
+    [actions, exitToTitle, connection],
   );
 
   let body: React.ReactNode;
@@ -218,6 +271,9 @@ export function App() {
         // play 入口では切替UI自体を出さない（本番のプレイヤーが触る画面）。
         onToggleDevTools={devToolsAvailable ? setShowDevToolsPref : undefined}
         startCountdownDeadlineMs={startCountdownDeadlineMs}
+        matchResult={matchResult}
+        sessionEndDeadlineMs={sessionEndDeadlineMs}
+        onSessionEnd={exitToTitle}
         inMatchDevTools={
           // 練習（フロント完結）モードのみ。オンライン対戦では出さない。
           backend === "mock" ? (
