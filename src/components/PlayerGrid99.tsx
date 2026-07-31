@@ -84,7 +84,7 @@ export function PlayerGrid99({
             key={p.playerId}
             title={`${p.displayName} / バッジ${p.badgeCount} / ${p.alive ? "生存" : "脱落"}`}
             className={`flex items-center justify-center border font-black leading-none ${
-              large ? "text-sm" : "text-[10px]"
+              large ? "text-xs" : "text-[10px]"
             } ${cellClass(p)} ${
               // 決着表示では、まだ生き残っていて危険域の相手を脈動させる（表示のみ）。
               large && p.alive && stackRatioOf(p) >= 0.85 ? "animate-danger-pulse" : ""

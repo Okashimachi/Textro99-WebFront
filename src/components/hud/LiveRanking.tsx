@@ -54,7 +54,7 @@ export function LiveRanking({
       <ul
         className={
           size === "large"
-            ? "flex h-full min-h-0 flex-col gap-1 overflow-hidden"
+            ? "flex h-full min-h-0 flex-col gap-0.5 overflow-hidden"
             : "space-y-px"
         }
       >
@@ -100,7 +100,9 @@ function Row({
     <li
       className={`flex items-center tabular-nums ${
         large
-          ? `min-h-[2.25rem] max-h-14 flex-1 gap-3 border px-3 ${
+          ? // 件数が多いほど1行が薄くなるよう、行の高さはパネルに追従させる
+            // （下限を置くと 20 行で画面からあふれるため min-h-0）。
+            `min-h-0 flex-1 gap-2 border px-2 leading-none ${
               r.isSelf
                 ? "border-zinc-900 bg-zinc-900 text-white"
                 : (podium ?? "border-zinc-200 bg-white text-zinc-900")
@@ -113,13 +115,13 @@ function Row({
       <span
         key={r.rank}
         className={`flex shrink-0 items-center justify-center font-black ${
-          large ? "w-10 animate-value-bump text-3xl" : "w-5"
+          large ? "w-8 animate-value-bump text-xl" : "w-5"
         } ${MEDAL[r.rank] ?? (r.isSelf ? "text-white" : "text-zinc-500")}`}
       >
         {rankLabel(r.rank)}
       </span>
       <span
-        className={`min-w-0 flex-1 truncate font-bold ${large ? "text-base" : ""} ${
+        className={`min-w-0 flex-1 truncate font-bold ${large ? "text-sm" : ""} ${
           !r.player.alive ? "line-through" : ""
         }`}
       >
@@ -138,7 +140,7 @@ function Row({
         </span>
       )}
       <span
-        className={`shrink-0 font-bold ${large ? "text-lg" : "text-[11px]"} ${
+        className={`shrink-0 font-bold ${large ? "text-sm" : "text-[11px]"} ${
           r.isSelf ? "text-amber-300" : "text-amber-600"
         }`}
       >
