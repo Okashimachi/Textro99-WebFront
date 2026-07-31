@@ -14,6 +14,7 @@ import type { GameViewModel } from "@/state";
 import { LiveRanking } from "@/components/hud/LiveRanking";
 import { PlayerGrid99 } from "@/components/PlayerGrid99";
 import { ResultBoard } from "./ResultBoard";
+import { ResultActions } from "./ResultActions";
 
 interface Props {
   state: GameViewModel;
@@ -97,8 +98,8 @@ export function MatchResultScreen({
           />
         </div>
 
-        {/* 戦績は縦に長いので、画面が低いときはこの列だけスクロールさせる。 */}
-        <div className="order-1 min-h-0 overflow-y-auto lg:order-3">
+        {/* 右：戦績（読むところ）＋操作（押すところ）。別ブロックにして役割を分ける。 */}
+        <div className="order-1 flex min-h-0 flex-col gap-2 lg:order-3">
           <ResultBoard
             result={result}
             // 表示名の解決だけ（サーバーが送った attackerId を players から引く）。
@@ -113,11 +114,14 @@ export function MatchResultScreen({
                     )?.displayName ?? state.defeatedBy.attackerId)
             }
             defeatedBadges={state.defeatedBy?.badgesTransferred ?? 0}
+            className="min-h-0 flex-1 overflow-y-auto"
+          />
+          <ResultActions
             sessionEndDeadlineMs={sessionEndDeadlineMs}
             onRematch={onRematch}
             onBackToTitle={onBackToTitle}
             onSessionEnd={onSessionEnd}
-            className="h-full"
+            className="shrink-0"
           />
         </div>
       </div>
