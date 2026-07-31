@@ -42,6 +42,8 @@ export function LiveRanking({
   const selfRow = selfIndex >= 0 ? ranked[selfIndex] : undefined;
   // 表示は先頭 limit 件のみ。自分がそこに入らないときだけ末尾に自分の行を足す。
   const selfOutside = selfIndex >= limit ? ranked[selfIndex] : null;
+  // large では左右2列に割る（左が上位）。奇数なら左を1件多くする。
+  const half = Math.ceil(limit / 2);
 
   return (
     <Panel
@@ -51,28 +53,49 @@ export function LiveRanking({
       className={className}
       bodyClassName="p-2"
     >
-      <ul
-        className={
-          size === "large"
-            ? "flex h-full min-h-0 flex-col gap-0.5 overflow-hidden"
-            : "space-y-px"
-        }
-      >
-        {shown.map((r) => (
-          <Row
-            key={r.player.playerId}
-            r={r}
-            selfDisplayName={selfDisplayName}
-            size={size}
-          />
-        ))}
-        {selfOutside && (
-          <>
-            <li className="text-center text-[10px] leading-none text-zinc-500">⋯</li>
-            <Row r={selfOutside} selfDisplayName={selfDisplayName} size={size} />
-          </>
-        )}
-      </ul>
+      {size === "large" ? (
+        // パネルの幅は変えずに中を左右2列に割り、1列10人ずつで上位20人を出す。
+        <div className="grid h-full min-h-0 grid-cols-2 gap-x-2 overflow-hidden">
+          {[shown.slice(0, half), shown.slice(half)].map((column, i) => (
+            <ul key={i} className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
+              {column.map((r) => (
+                <Row
+                  key={r.player.playerId}
+                  r={r}
+                  selfDisplayName={selfDisplayName}
+                  size={size}
+                />
+              ))}
+              {/* 自分が上位 limit 件に入らないときだけ、右列の末尾に自分の行を足す。 */}
+              {i === 1 && selfOutside && (
+                <>
+                  <li className="text-center text-[10px] leading-none text-zinc-500">
+                    ⋯
+                  </li>
+                  <Row r={selfOutside} selfDisplayName={selfDisplayName} size={size} />
+                </>
+              )}
+            </ul>
+          ))}
+        </div>
+      ) : (
+        <ul className="space-y-px">
+          {shown.map((r) => (
+            <Row
+              key={r.player.playerId}
+              r={r}
+              selfDisplayName={selfDisplayName}
+              size={size}
+            />
+          ))}
+          {selfOutside && (
+            <>
+              <li className="text-center text-[10px] leading-none text-zinc-500">⋯</li>
+              <Row r={selfOutside} selfDisplayName={selfDisplayName} size={size} />
+            </>
+          )}
+        </ul>
+      )}
     </Panel>
   );
 }
