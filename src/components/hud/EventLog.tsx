@@ -33,6 +33,13 @@ const KIND_STYLE: Record<
     tag: "bg-zinc-400",
     label: "情報",
   },
+  // 試合中には出ない（マッチング待機中のみ）。網羅のために定義しておく。
+  Matchmaking: {
+    mark: "•",
+    box: "border-zinc-300 bg-zinc-50 text-zinc-600",
+    tag: "bg-zinc-400",
+    label: "待機",
+  },
 };
 
 export function EventLog({ events, limit = 2 }: Props) {
