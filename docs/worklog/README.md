@@ -54,3 +54,4 @@ docs/worklog/log-NNN-{短いkebab-caseの主題}/
 | [017](./log-017-hud-console-redesign/README.md) | 試合中HUDの「戦況コンソール」デザイン刷新（白地＋赤） | ✅ 実装・ブラウザ検証済み | 2026-07-29 |
 | [018](./log-018-proto-v0.1.1/README.md) | proto v0.1.1 追従（AttackRequest 廃止・サーバー確定順位） | 🚧 実装済み・ブラウザ/実サーバー検証は未 | 2026-07-31 |
 | [019](./log-019-play-flow/README.md) | 実プレイ用フロー（プレイする / テスト用の入口分離） | 🚧 実装済み・待機画面2状態は未検証 | 2026-07-31 |
+| [020](./log-020-matchmaking-waiting-info/README.md) | マッチング待機画面に残り時間と参加者一覧を表示（proto 同期） | ✅ 実装・ブラウザ/実サーバー検証済み | 2026-08-01 |
