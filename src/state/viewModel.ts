@@ -53,6 +53,16 @@ export interface DefeatedBy {
   badgesTransferred: number;
 }
 
+/**
+ * 自分が倒した相手（KoNotified のうち attackerId が自分のもの）を受信順に写したもの。
+ * GameOver DTO には koCount（数）しか入らないため、「誰を倒したか」を出すにはここで保持しておく。
+ * 数の正典はあくまでサーバーの koCount。これは表示用の内訳（クライアントで数え直さない）。
+ */
+export interface DefeatedPlayer {
+  victimId: PlayerId;
+  badgesTransferred: number;
+}
+
 export interface ComboState {
   value: number;
   lastDelta: number;
@@ -99,6 +109,8 @@ export interface GameViewModel {
   gameOver: import("@/proto/types").GameOver | null;
   /** 自分を脱落させた KO（サーバーの KoNotified を写すだけ）。未脱落なら null。 */
   defeatedBy: DefeatedBy | null;
+  /** 自分が倒した相手（サーバーの KoNotified を受信順に写すだけ）。 */
+  defeatedPlayers: DefeatedPlayer[];
 
   // 直近イベント（新しいものが先頭）
   events: GameEvent[];
@@ -124,6 +136,7 @@ export function createInitialViewModel(): GameViewModel {
     matchmakingReceivedAtMs: null,
     gameOver: null,
     defeatedBy: null,
+    defeatedPlayers: [],
     events: [],
     eventSeq: 0,
   };

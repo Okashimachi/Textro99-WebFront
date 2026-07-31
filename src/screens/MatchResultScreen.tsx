@@ -114,6 +114,13 @@ export function MatchResultScreen({
                     )?.displayName ?? state.defeatedBy.attackerId)
             }
             defeatedBadges={state.defeatedBy?.badgesTransferred ?? 0}
+            // 倒した相手も表示名を引くだけ（順番・件数はサーバーの KoNotified のまま）。
+            defeatedPlayers={state.defeatedPlayers.map((d) => ({
+              name:
+                state.players.find((p) => p.playerId === d.victimId)?.displayName ??
+                d.victimId,
+              badges: d.badgesTransferred,
+            }))}
             className="min-h-0 flex-1 overflow-y-auto"
           />
           <ResultActions

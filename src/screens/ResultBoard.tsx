@@ -18,6 +18,11 @@ interface Props {
   defeatedByName?: string | null;
   /** その KO で相手に渡ったバッジ数（サーバー値）。 */
   defeatedBadges?: number;
+  /**
+   * 自分が倒した相手（受信順）。名前の解決は呼び出し側が players から行う。
+   * 件数の正典はサーバーの koCount。これはその内訳表示。
+   */
+  defeatedPlayers?: { name: string; badges: number }[];
   className?: string;
 }
 
@@ -25,6 +30,7 @@ export function ResultBoard({
   result,
   defeatedByName,
   defeatedBadges = 0,
+  defeatedPlayers = [],
   className = "",
 }: Props) {
   const isWin = result.rank === 1;
@@ -96,56 +102,79 @@ export function ResultBoard({
         </div>
       )}
 
-      {/* 撃破・バッジは戦績の主指標なので大きく2枚 */}
-      <div className="grid shrink-0 grid-cols-2 gap-2">
-        <BigStat label="KO数" value={`${result.koCount}`} tone="accent" />
-        <BigStat label="最終バッジ" value={`${result.finalBadgeCount}`} tone="badge" />
+      {/* 倒した相手。数（サーバーの koCount）と、誰を倒したかの内訳を1枚にまとめる。 */}
+      <div className="flex min-h-0 flex-1 flex-col border-2 border-red-500 bg-red-50">
+        <div className="flex shrink-0 items-center gap-3 border-b border-red-200 px-3 py-2">
+          <span className="text-[11px] font-black uppercase tracking-[0.25em] text-red-700">
+            Knocked out
+          </span>
+          <span className="text-4xl font-black leading-none tabular-nums text-red-600">
+            {result.koCount}
+          </span>
+          <span className="text-sm font-black text-red-600">人</span>
+          <span className="ml-auto text-[11px] font-bold tabular-nums text-amber-600">
+            バッジ {result.finalBadgeCount}
+          </span>
+        </div>
+
+        <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
+          {defeatedPlayers.length === 0 ? (
+            <li className="px-1 py-0.5 text-sm text-red-700/60">
+              {result.koCount > 0
+                ? "撃破した相手の記録なし（試合途中から観戦）"
+                : "撃破なし"}
+            </li>
+          ) : (
+            defeatedPlayers.map((p, i) => (
+              <li
+                key={`${p.name}-${i}`}
+                className="flex items-center gap-2 border border-red-200 bg-white px-2 py-1"
+              >
+                <span className="w-5 shrink-0 text-center text-[11px] font-black tabular-nums text-red-400">
+                  {i + 1}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-lg font-black text-zinc-900">
+                  {p.name}
+                </span>
+                {p.badges > 0 && (
+                  <span className="shrink-0 text-xs font-bold tabular-nums text-amber-600">
+                    +{p.badges}
+                  </span>
+                )}
+              </li>
+            ))
+          )}
+          {/* サーバーの koCount に内訳が足りない場合（受信前の撃破など）は差分を明示する。
+              数の正典は koCount 側。ここで数え直して辻褄を合わせない。 */}
+          {defeatedPlayers.length > 0 && result.koCount > defeatedPlayers.length && (
+            <li className="px-1 py-0.5 text-xs text-red-700/60">
+              ほか {result.koCount - defeatedPlayers.length} 人（記録なし）
+            </li>
+          )}
+        </ul>
       </div>
 
-      {/* タイピング統計 */}
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-3">
-        <Stat label="最大コンボ" value={`${typingStats.maxCombo}`} />
-        <Stat label="ダケンクリア" value={`${typingStats.totalDakenCleared}`} />
-        <Stat label="ミス" value={`${typingStats.totalMiss}`} />
-        <Stat label="正確率" value={`${accuracy.toFixed(1)}%`} />
-        <Stat
-          label="経過時間"
+      {/* タイピング統計は主役ではないので1行に畳む。 */}
+      <dl className="flex shrink-0 flex-wrap items-baseline gap-x-3 gap-y-1 border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-500">
+        <MiniStat label="最大コンボ" value={`${typingStats.maxCombo}`} />
+        <MiniStat label="ダケン" value={`${typingStats.totalDakenCleared}`} />
+        <MiniStat label="ミス" value={`${typingStats.totalMiss}`} />
+        <MiniStat label="正確率" value={`${accuracy.toFixed(1)}%`} />
+        <MiniStat
+          label="時間"
           value={`${(typingStats.elapsedMs / 1000).toFixed(0)}s`}
         />
-      </div>
-
+      </dl>
     </Panel>
   );
 }
 
-function BigStat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "accent" | "badge";
-}) {
-  const c =
-    tone === "accent"
-      ? { border: "border-red-500", bg: "bg-red-50", text: "text-red-600" }
-      : { border: "border-amber-500", bg: "bg-amber-50", text: "text-amber-600" };
+/** タイピング統計の1項目。枠を持たず、ラベルと値だけを詰めて並べる。 */
+function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`border-2 px-3 py-2 ${c.border} ${c.bg}`}>
-      <div className="text-[11px] font-bold text-zinc-500">{label}</div>
-      <div className={`text-4xl font-black leading-tight tabular-nums ${c.text}`}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col justify-center border border-zinc-300 bg-white px-3 py-2">
-      <div className="text-[11px] text-zinc-500">{label}</div>
-      <div className="text-2xl font-bold tabular-nums">{value}</div>
-    </div>
+    <span className="flex items-baseline gap-1">
+      <dt className="text-[11px]">{label}</dt>
+      <dd className="text-base font-bold tabular-nums text-zinc-900">{value}</dd>
+    </span>
   );
 }
