@@ -2,55 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================================
- * 見た目テーマ（寿司打×テトリス99）用のアニメーション・装飾。
- * すべて「表示」だけ。戦闘判定・状態には一切関与しない（docs/rules/01 §3）。
- * ========================================================================== */
-
-/* コンベアベルトの流れ（右→左）。背景パターンを左へ流して動きを演出。 */
-@keyframes belt-scroll {
-  from {
-    background-position-x: 0;
-  }
-  to {
-    background-position-x: -56px;
-  }
+/* HUD は明色テーマ固定。OS のダークモードでスクロール余白が黒くならないようにする。 */
+html {
+  color-scheme: light;
+  background-color: #f4f4f5;
 }
 
-/* 新しい寿司皿（お題）が右から中央へ流れ込む登場アニメ。 */
-@keyframes sushi-slide-in {
+/* ============================================================================
+ * ゲーム HUD 用のアニメーション・装飾（表示のみ・戦闘判定には一切関与しない）。
+ * docs/rules/01 §3。
+ * ========================================================================== */
+
+/* お題キューに新しい札が入る（下からせり上がって整列）。 */
+@keyframes queue-in {
   from {
-    transform: translateX(70%) scale(0.9);
+    transform: translateY(10px) scale(0.94);
     opacity: 0;
   }
   to {
-    transform: translateX(0) scale(1);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
-/* 中央お題のふわっと着地。 */
+/* 現在のお題が切り替わったときの着地ポップ。 */
 @keyframes plate-pop {
   0% {
-    transform: translateY(-6px) scale(0.96);
+    transform: translateY(-8px) scale(0.97);
+    opacity: 0.4;
   }
   60% {
-    transform: translateY(2px) scale(1.02);
+    transform: translateY(2px) scale(1.015);
   }
   100% {
     transform: translateY(0) scale(1);
+    opacity: 1;
   }
 }
 
-/* 被弾スタックが背景に積み上がる（下からせり上がる）。 */
-@keyframes stack-rise {
-  from {
-    transform: translateY(10px);
-    opacity: 0;
+/* 数値が更新されたときの強調バンプ（コンボ等）。 */
+@keyframes value-bump {
+  0% {
+    transform: scale(1);
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+  35% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
@@ -58,17 +57,17 @@
 @keyframes danger-pulse {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: 0.5;
   }
   50% {
     opacity: 1;
   }
 }
 
-/* 被弾予告の警告バナー登場。 */
+/* 被弾予告アラートの登場（上からスライドイン）。 */
 @keyframes warn-drop {
   from {
-    transform: translateY(-100%);
+    transform: translateY(-120%);
     opacity: 0;
   }
   to {
@@ -77,27 +76,44 @@
   }
 }
 
-.animate-belt {
-  background-image: repeating-linear-gradient(
-    90deg,
-    rgba(148, 163, 184, 0.14) 0px,
-    rgba(148, 163, 184, 0.14) 22px,
-    rgba(15, 23, 42, 0) 22px,
-    rgba(15, 23, 42, 0) 56px
-  );
-  animation: belt-scroll 0.9s linear infinite;
+/* ゲージのシャイン（エネルギー感）。 */
+@keyframes gauge-shine {
+  from {
+    background-position-x: -160px;
+  }
+  to {
+    background-position-x: 160px;
+  }
 }
 
-.animate-sushi-in {
-  animation: sushi-slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+.animate-queue-in {
+  animation: queue-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .animate-plate-pop {
   animation: plate-pop 0.3s ease-out;
 }
 
-.animate-stack-rise {
-  animation: stack-rise 0.3s ease-out;
+.animate-value-bump {
+  animation: value-bump 0.32s ease-out;
+}
+
+/* お題のストック（被弾スタック）が危険域のときの、画面全体の警告フラッシュ。
+   内容の可読性を落とさないよう、中央は薄く縁だけを強く光らせる。 */
+@keyframes screen-alert {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0);
+    background-color: rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 90px 18px rgba(239, 68, 68, 0.55);
+    background-color: rgba(239, 68, 68, 0.07);
+  }
+}
+
+.animate-screen-alert {
+  animation: screen-alert 0.7s ease-in-out infinite;
 }
 
 .animate-danger-pulse {
@@ -105,5 +121,18 @@
 }
 
 .animate-warn-drop {
-  animation: warn-drop 0.3s ease-out;
+  animation: warn-drop 0.28s ease-out;
+}
+
+/* コンボゲージのエネルギーシャイン（満タン近くで流れる光）。 */
+.gauge-shine {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 80%
+  );
+  background-size: 160px 100%;
+  background-repeat: no-repeat;
+  animation: gauge-shine 1.4s linear infinite;
 }

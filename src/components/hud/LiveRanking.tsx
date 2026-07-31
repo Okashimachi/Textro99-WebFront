@@ -1,64 +1,103 @@
-// 試合中のリアルタイム順位（近似）。deriveRanking の結果を並べるだけの表示。
+// 試合中のリアルタイム順位。サーバー確定順位（PlayerSummary.rank）で並べるだけの表示。
+// 表示方針: 等幅の順位表。自分の行は黒背景で反転させ、スクロールせずに見つけられるようにする。
 import type { PlayerView } from "@/state";
-import { deriveRanking } from "@/state/ranking";
+import { sortByServerRank, type RankedPlayer } from "@/state/ranking";
+import { Panel } from "./Panel";
 
 interface Props {
   players: PlayerView[];
   selfPlayerId: string | null;
   /** 自分の行に出す表示名（プロフィール名）。未指定ならサーバーの displayName。 */
   selfDisplayName?: string;
-  /** 上位何件まで出すか（既定 8）。 */
+  /** 上位何件まで出すか（既定 6）。 */
   limit?: number;
+  /** 外側パネルの追加クラス（高さの引き伸ばし用）。 */
+  className?: string;
 }
+
+// 上位3位のメダル色（表示だけ）。
+const MEDAL: Record<number, string> = {
+  1: "text-amber-500",
+  2: "text-zinc-400",
+  3: "text-amber-700",
+};
 
 export function LiveRanking({
   players,
   selfPlayerId,
   selfDisplayName,
-  limit = 8,
+  limit = 14,
+  className = "",
 }: Props) {
-  const ranked = deriveRanking(players, selfPlayerId);
+  const ranked = sortByServerRank(players, selfPlayerId);
+  const total = ranked.length;
   const shown = ranked.slice(0, limit);
-  const selfRow = ranked.find((r) => r.isSelf);
-  const selfOutside = selfRow && selfRow.rank > limit ? selfRow : null;
+  const selfIndex = ranked.findIndex((r) => r.isSelf);
+  const selfRow = selfIndex >= 0 ? ranked[selfIndex] : undefined;
+  // 表示は先頭 limit 件のみ。自分がそこに入らないときだけ末尾に自分の行を足す。
+  const selfOutside = selfIndex >= limit ? ranked[selfIndex] : null;
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3 text-sm">
-      <div className="mb-2 text-xs font-bold text-slate-300">ランキング（暫定）</div>
-      <ul className="space-y-0.5">
+    <Panel
+      label="ランキング"
+      tone="badge"
+      right={selfRow ? `自分 ${rankLabel(selfRow.rank)} / ${total}` : `${total}人`}
+      className={className}
+      bodyClassName="p-2"
+    >
+      <ul className="space-y-px">
         {shown.map((r) => (
           <Row key={r.player.playerId} r={r} selfDisplayName={selfDisplayName} />
         ))}
         {selfOutside && (
           <>
-            <li className="py-0.5 text-center text-xs text-slate-600">…</li>
+            <li className="text-center text-[10px] leading-none text-zinc-500">⋯</li>
             <Row r={selfOutside} selfDisplayName={selfDisplayName} />
           </>
         )}
       </ul>
-    </div>
+    </Panel>
   );
 }
 
-function Row({
-  r,
-  selfDisplayName,
-}: {
-  r: ReturnType<typeof deriveRanking>[number];
-  selfDisplayName?: string;
-}) {
+/** サーバー順位の表示文字列。0（未確定）はダッシュ。 */
+function rankLabel(rank: number): string {
+  return rank > 0 ? String(rank) : "—";
+}
+
+function Row({ r, selfDisplayName }: { r: RankedPlayer; selfDisplayName?: string }) {
   const name = r.isSelf && selfDisplayName ? selfDisplayName : r.player.displayName;
   return (
     <li
-      className={`flex items-center justify-between rounded px-2 py-0.5 tabular-nums ${
-        r.isSelf ? "bg-emerald-900/50 font-bold text-emerald-200" : "text-slate-300"
-      } ${!r.player.alive ? "opacity-40 line-through" : ""}`}
+      className={`flex items-center gap-2 px-1.5 py-1 text-xs tabular-nums ${
+        r.isSelf ? "bg-zinc-900 text-white" : "text-zinc-900"
+      } ${!r.player.alive ? "opacity-45" : ""}`}
     >
-      <span className="flex items-center gap-2">
-        <span className="w-6 text-right text-slate-400">{r.rank}</span>
-        <span className="truncate">{name}</span>
+      <span
+        className={`flex w-5 shrink-0 items-center justify-center font-black ${
+          MEDAL[r.rank] ?? (r.isSelf ? "text-white" : "text-zinc-500")
+        }`}
+      >
+        {rankLabel(r.rank)}
       </span>
-      <span className="text-xs text-slate-400">🏅{r.player.badgeCount}</span>
+      <span
+        className={`min-w-0 flex-1 truncate font-bold ${
+          !r.player.alive ? "line-through" : ""
+        }`}
+      >
+        {name}
+        {r.isSelf && <span className="ml-1 text-[10px] font-normal">(あなた)</span>}
+      </span>
+      {!r.player.alive && (
+        <span className="shrink-0 text-[10px] font-bold text-red-600">脱落</span>
+      )}
+      <span
+        className={`shrink-0 text-[11px] font-bold ${
+          r.isSelf ? "text-amber-300" : "text-amber-600"
+        }`}
+      >
+        {r.player.badgeCount}
+      </span>
     </li>
   );
 }

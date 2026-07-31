@@ -1,18 +1,30 @@
-// 試合中画面。HUD コンポーネント群（#11）を state から組み立てる。
+// 試合中画面。HUD コンポーネント群を state から組み立てる。
 // 各コンポーネントは proto DTO / ViewModel のみを入力とし、判定ロジックを持たない。
 //
-// レイアウト方針（企画: 寿司打×テトリス99）:
-//   ・中央のプレイ盤面(PlayField)にお題を寿司コンベアとして流し、被弾スタックを背景に積む。
-//   ・右側にテトリス99 風の対戦相手グリッド＋ランキングを置き、優勢劣勢を一望できるようにする。
-//   ・攻撃/防御の駆け引き（コンボ・被弾予告・作戦）は盤面の周囲に配置する。
+// レイアウト方針（視線は中央の主ディスプレイに固定し、周辺に情報を配る）:
+//
+//   ┌──── ヘッダ: 残り人数 / 撃破数（この2つだけを大きく）────┐
+//   │ 順位 │ 敵の状況│      作戦（0-9）        │             │
+//   │      │（99マス・│  通知（戦況ログ）        │  NEXT       │
+//   │      │ 欠席は ✕）│ ┌────────────────────┐ │（上が「次」・│
+//   │      │         │ │ 主ディスプレイ      │ │ 下へ溜まる・ │
+//   │      │         │ │ いま打つお題 (+攻撃力)│ │ 地色で危険度）│
+//   └──────────────────────────────────────────────────────┘
+//
+// 被弾ダケン自体は NEXT に色で表れる。それとは別に、着弾までの猶予（graceMs）がある予告は
+// 中央の通知の上でカウントダウン表示する（IncomingAttacks・予告が無いときは何も出さない）。
+// お題のストック（被弾スタック）が危険域に入ると、画面全体を赤くフラッシュさせて警告する（表示のみ）。
 import type { GameViewModel } from "@/state";
-import { ComboGauge } from "@/components/hud/ComboGauge";
-import { AttackWarningBar } from "@/components/hud/AttackWarningBar";
 import { StrategySelector } from "@/components/hud/StrategySelector";
 import { EventLog } from "@/components/hud/EventLog";
+import { IncomingAttacks } from "@/components/hud/IncomingAttacks";
 import { LiveRanking } from "@/components/hud/LiveRanking";
+import { MatchStatusBar } from "@/components/hud/MatchStatusBar";
+import { NextQueue } from "@/components/hud/NextQueue";
 import { PlayField } from "@/components/hud/PlayField";
 import { PlayerGrid99 } from "@/components/PlayerGrid99";
+import { useDakenTimer } from "@/components/hud/useDakenTimer";
+import { stackLevel } from "@/components/hud/stackLevel";
 
 interface Props {
   state: GameViewModel;
@@ -26,6 +38,8 @@ interface Props {
   selfDisplayName?: string;
   /** 観戦中（脱落済み）なら操作系をトーンダウンする。 */
   spectating?: boolean;
+  /** ヘッダー右側に置く開発ツール（練習モードのみ・dev 専用）。 */
+  devTools?: React.ReactNode;
 }
 
 export function InMatchScreen({
@@ -35,53 +49,78 @@ export function InMatchScreen({
   missCount,
   selfDisplayName,
   spectating = false,
+  devTools,
 }: Props) {
+  // 残り時間（主ディスプレイの帯）。時間切れの確定はサーバー権威。
+  const timer = useDakenTimer(state.activeDaken[0]);
+  // ストックが満杯に近い＝ゲームオーバーが近い。画面全体で警告する。
+  const stackDanger = stackLevel(state.dakenStack) === "danger";
+
   return (
-    <div className="grid gap-3 py-4 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
-      {/* 左：メインプレイ盤面 */}
-      <div className={`space-y-3 ${spectating ? "opacity-60" : ""}`}>
-        {spectating && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-950/40 px-3 py-2 text-sm text-amber-300">
-            観戦モード（あなたは脱落済み・操作は無効）
-          </div>
-        )}
-
-        {/* 被弾予告：盤面のすぐ上に出して即座に気づけるように */}
-        <AttackWarningBar incomingAttacks={state.incomingAttacks} />
-
-        {/* 寿司コンベア盤面（お題＋被弾スタック背景） */}
-        <PlayField
-          activeDaken={state.activeDaken}
-          dakenStack={state.dakenStack}
-          typedPrefix={typedPrefix}
-          missCount={missCount}
+    // 1画面ぶんの高さを使い切る（ヘッダ約 2.5rem ぶんを差し引く）。
+    <div className="mx-auto flex min-h-[calc(100vh-2.75rem)] max-w-[1280px] flex-col gap-2 py-2">
+      {/* ストックが危険域: 画面全体をフラッシュさせる（クリックは透過・表示のみ） */}
+      {stackDanger && !spectating && (
+        <div
+          aria-hidden
+          className="animate-screen-alert pointer-events-none fixed inset-0 z-50"
         />
+      )}
 
-        {/* 攻撃原資（コンボ）と作戦 */}
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-          <ComboGauge combo={state.combo} />
-          <StrategySelector selectedStrategyId={selectedStrategyId} />
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <MatchStatusBar state={state} />
+        {devTools}
       </div>
 
-      {/* 右：テトリス99 風の戦況ボード */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm">
-          <span className="text-slate-400">生存</span>
-          <span>
-            <span className="text-2xl font-black text-emerald-300">
-              {state.aliveCount}
-            </span>
-            <span className="text-slate-500"> / 99</span>
-          </span>
+      {spectating && (
+        <div className="border border-red-500 bg-red-50 px-3 py-1.5 text-center text-xs font-bold text-red-800">
+          観戦モード（あなたは脱落済み・操作は無効）
         </div>
-        <PlayerGrid99 players={state.players} selfPlayerId={state.selfPlayerId} />
-        <LiveRanking
-          players={state.players}
-          selfPlayerId={state.selfPlayerId}
-          selfDisplayName={selfDisplayName}
-        />
-        <EventLog events={state.events} />
+      )}
+
+      <div
+        className={`grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(240px,0.9fr)_minmax(420px,1.5fr)_minmax(200px,0.7fr)] ${
+          spectating ? "opacity-60" : ""
+        }`}
+      >
+        {/* 左：ランキング（細め）＋敵の状況（太め）。どちらも縦長に揃える。 */}
+        <div className="order-2 grid min-h-0 grid-cols-[0.6fr_1.4fr] gap-2 lg:order-1">
+          <LiveRanking
+            players={state.players}
+            selfPlayerId={state.selfPlayerId}
+            selfDisplayName={selfDisplayName}
+            className="h-full"
+          />
+          <PlayerGrid99
+            players={state.players}
+            selfPlayerId={state.selfPlayerId}
+            className="h-full"
+          />
+        </div>
+
+        {/* 中央：作戦 → 通知 → 主ディスプレイ（攻撃力を内包） */}
+        <div className="order-1 flex min-h-0 flex-col gap-2 lg:order-2">
+          <StrategySelector selectedStrategyId={selectedStrategyId} />
+          <IncomingAttacks
+            incomingAttacks={state.incomingAttacks}
+            players={state.players}
+          />
+          <EventLog events={state.events} />
+          <PlayField
+            activeDaken={state.activeDaken}
+            combo={state.combo}
+            difficulty={state.difficulty}
+            typedPrefix={typedPrefix}
+            missCount={missCount}
+            timer={timer}
+            className="min-h-0 flex-1"
+          />
+        </div>
+
+        {/* 右：NEXT（積み上げ＋溜まり具合レール） */}
+        <div className="order-3 min-h-0">
+          <NextQueue activeDaken={state.activeDaken} dakenStack={state.dakenStack} />
+        </div>
       </div>
     </div>
   );

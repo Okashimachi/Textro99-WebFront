@@ -7,7 +7,6 @@
 
 import {
   MessageType,
-  type AttackFailed,
   type AttackIncoming,
   type ComboUpdated,
   type DakenExpired,
@@ -18,7 +17,7 @@ import {
   type KoNotified,
   type MatchStart,
   type MatchmakingStatus,
-  type OffsetResolved,
+  type PlayerId,
   type PlayerListDelta,
   type PlayerListUpdated,
   type Welcome,
@@ -69,11 +68,18 @@ export function gameReducer(
     }
 
     case MessageType.MatchmakingStatus: {
-      return {
+      const p = payload as MatchmakingStatus;
+      // 待機中の動き（参加/離脱・カウントダウン開始/中止）をイベントとして記録する。
+      // サーバーは差分ではなく現在値を配信するため、直前の値との比較で「何が起きたか」を
+      // 復元する。判定はせず表示用の文言を作るだけ（docs/rules/01 §1,§3）。
+      const next = {
         ...state,
-        matchmaking: payload as MatchmakingStatus,
+        matchmaking: p,
         matchmakingReceivedAtMs: receivedAtMs,
       };
+      const msg = matchmakingEventMessage(state.matchmaking, p);
+      if (!msg) return next;
+      return { ...next, ...pushEvent(state, "Matchmaking", msg, receivedAtMs) };
     }
 
     case MessageType.MatchStart: {
@@ -88,12 +94,33 @@ export function gameReducer(
         activeDaken: [p.initialDaken],
         gameOver: null,
         matchmaking: null,
+        // 試合ごとの値は MatchStart で初期化する。前の試合の値が残っていると、
+        // 新しい試合の開始直後に前試合の被弾スタック（＝危険警告）やコンボが見えてしまう。
+        // limit だけはサーバーの GameParameters をそのまま写す（クライアントで決めない）。
+        dakenStack: { count: 0, limit: p.parameters.stackLimit, trapPending: false },
+        combo: { value: 0, lastDelta: 0, lastReason: null },
+        difficulty: { globalLevel: 0, personalLevel: 0, effectiveLevel: 0 },
+        incomingAttacks: [],
+        ...pushEvent(
+          state,
+          "Matchmaking",
+          `マッチング完了・試合開始（${p.players.length} 人）`,
+          receivedAtMs,
+        ),
       };
     }
 
     case MessageType.DakenIssued: {
       const p = payload as DakenIssued;
-      return { ...state, activeDaken: [...state.activeDaken, ...p.daken] };
+      // insertIndex はサーバー指定の挿入位置（被弾を列の途中へ割り込ませる用）。
+      // 省略なら従来どおり末尾に積む。位置の決定はサーバー権威で、ここでは写すだけ。
+      const next = [...state.activeDaken];
+      const at =
+        p.insertIndex === undefined
+          ? next.length
+          : Math.min(Math.max(p.insertIndex, 0), next.length);
+      next.splice(at, 0, ...p.daken);
+      return { ...state, activeDaken: next };
     }
 
     case MessageType.DakenExpired: {
@@ -134,10 +161,15 @@ export function gameReducer(
 
     case MessageType.AttackIncoming: {
       const p = payload as AttackIncoming;
+      // 予告の消化を知らせる S2C は無い（着弾はサーバーが DakenIssued / DakenStackUpdated で示す）。
+      // そのため grace 経過ぶんは表示側で落とす。ここでは配列が伸び続けないよう、
+      // 新しい予告を積むついでに期限切れを掃除するだけ（表示専用・戦闘判定はしない）。
       return {
         ...state,
         incomingAttacks: [
-          ...state.incomingAttacks,
+          ...state.incomingAttacks.filter(
+            (a) => a.receivedAtMs + a.graceMs > receivedAtMs,
+          ),
           {
             warningId: p.warningId,
             attackerId: p.attackerId,
@@ -149,37 +181,14 @@ export function gameReducer(
       };
     }
 
-    case MessageType.AttackFailed: {
-      const p = payload as AttackFailed;
-      return {
-        ...state,
-        ...pushEvent(state, "AttackFailed", `攻撃不成立: ${p.reason}`, receivedAtMs),
-      };
-    }
-
-    case MessageType.OffsetResolved: {
-      const p = payload as OffsetResolved;
-      // 予告を消化。撃ち返しがあれば新規予告は別途 AttackIncoming で届くため、ここでは除去のみ。
-      return {
-        ...state,
-        incomingAttacks: state.incomingAttacks.filter(
-          (a) => a.warningId !== p.warningId,
-        ),
-        ...pushEvent(
-          state,
-          "OffsetResolved",
-          `相殺 ${p.offsetAmount} / 残り着弾 ${p.remainderDakenCount}`,
-          receivedAtMs,
-        ),
-      };
-    }
-
     case MessageType.KoNotified: {
       const p = payload as KoNotified;
+      // attackerId が null の脱落は自滅（KO実行者なし）。
+      const victim = displayNameOf(state.players, p.victimId);
       const msg =
         p.attackerId === null
-          ? `${p.victimId} が自滅`
-          : `${p.attackerId} が ${p.victimId} を撃破（+${p.badgesTransferred}）`;
+          ? `${victim} が自滅`
+          : `${displayNameOf(state.players, p.attackerId)} が ${victim} を撃破（+${p.badgesTransferred}）`;
       // alive フラグは PlayerListUpdated/Delta が正典。ここではイベント記録のみ。
       return { ...state, ...pushEvent(state, "Ko", msg, receivedAtMs) };
     }
@@ -217,6 +226,47 @@ export function gameReducer(
       // 未対応 S2C（DifficultyUpdated 以外の将来型など）は state を変えない。
       return state;
   }
+}
+
+/**
+ * 直前の MatchmakingStatus と比較して、待機中に起きたことを1行の文言にする。
+ * 変化が無ければ null（イベントを積まない）。表示専用で判定はしない。
+ *
+ * サーバーは参加・離脱のたびに現在値を配信し、カウントダウン中は countdownMs に
+ * **残り時間ではなく全体秒数**を載せ直す（server: matchmaking.go broadcast）。
+ * そのため残り時間の表示には使えず、ここでは「開始した / 中止された」の検出にのみ使う。
+ */
+function matchmakingEventMessage(
+  prev: MatchmakingStatus | null,
+  next: MatchmakingStatus,
+): string | null {
+  // 初回受信＝待機に入った。
+  if (!prev) {
+    return `マッチングに参加（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+
+  const wasCounting = prev.countdownMs != null;
+  const isCounting = next.countdownMs != null;
+  if (!wasCounting && isCounting) {
+    return `最低人数に到達。まもなく開始（待機 ${next.waitingCount} 人）`;
+  }
+  if (wasCounting && !isCounting) {
+    return `最低人数を下回りカウントダウン中止（待機 ${next.waitingCount} 人）`;
+  }
+
+  const diff = next.waitingCount - prev.waitingCount;
+  if (diff > 0) {
+    return `プレイヤーが参加 +${diff}（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+  if (diff < 0) {
+    return `プレイヤーが離脱 ${diff}（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+  return null;
+}
+
+/** playerId から表示名を引く（未知IDは ID をそのまま出す）。表示専用。 */
+function displayNameOf(players: PlayerView[], playerId: PlayerId): string {
+  return players.find((p) => p.playerId === playerId)?.displayName ?? playerId;
 }
 
 /**

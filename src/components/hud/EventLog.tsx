@@ -1,30 +1,81 @@
-// EventLog — KO/攻撃等の直近イベント列。reducer が写したイベントを並べるだけ。
+// EventLog — KO/攻撃等の直近イベントを「通知」として主ディスプレイの上に出す。
+// reducer が写したイベントを並べるだけ（判定・集計はしない）。
+//
+// 表示方針: 打鍵中の視界（お題の真上）に入るので、種類ごとに色を変えて一瞬で意味が取れるようにし、
+// 件数は絞る。無いときもプレースホルダを置き、通知が来てもレイアウトが跳ねないようにする。
 import type { GameEvent } from "@/state";
 
 interface Props {
   events: GameEvent[];
+  /** 表示する最大件数（既定 2）。 */
+  limit?: number;
 }
 
-const KIND_COLOR: Record<GameEvent["kind"], string> = {
-  Welcome: "text-slate-400",
-  Ko: "text-rose-300",
-  AttackFailed: "text-amber-300",
-  OffsetResolved: "text-sky-300",
-  GameOver: "text-emerald-300",
+const KIND_STYLE: Record<
+  GameEvent["kind"],
+  { mark: string; box: string; tag: string; label: string }
+> = {
+  Ko: {
+    mark: "💥",
+    box: "border-red-500 bg-red-100 text-red-900",
+    tag: "bg-red-600",
+    label: "撃破",
+  },
+  GameOver: {
+    mark: "🏁",
+    box: "border-sky-500 bg-sky-100 text-sky-900",
+    tag: "bg-sky-600",
+    label: "決着",
+  },
+  Welcome: {
+    mark: "•",
+    box: "border-zinc-300 bg-zinc-50 text-zinc-600",
+    tag: "bg-zinc-400",
+    label: "情報",
+  },
+  // 試合中には出ない（マッチング待機中のみ）。網羅のために定義しておく。
+  Matchmaking: {
+    mark: "•",
+    box: "border-zinc-300 bg-zinc-50 text-zinc-600",
+    tag: "bg-zinc-400",
+    label: "待機",
+  },
 };
 
-export function EventLog({ events }: Props) {
+export function EventLog({ events, limit = 2 }: Props) {
+  const shown = events.slice(0, limit);
+
+  if (shown.length === 0) {
+    return (
+      <div className="border border-dashed border-zinc-300 px-3 py-2 text-center text-[11px] text-zinc-400">
+        戦況ログ（まだ動きはありません）
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3">
-      <div className="mb-1 text-xs text-slate-400">イベントログ</div>
-      <ul className="max-h-40 space-y-0.5 overflow-auto text-xs">
-        {events.length === 0 && <li className="text-slate-600">（なし）</li>}
-        {events.map((e) => (
-          <li key={e.id} className={KIND_COLOR[e.kind]}>
-            {e.message}
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-1">
+      {shown.map((e, i) => {
+        const s = KIND_STYLE[e.kind];
+        return (
+          <div
+            key={e.id}
+            className={`flex items-center gap-2 border-2 px-2 py-1.5 ${s.box} ${
+              i === 0 ? "animate-warn-drop" : "opacity-60"
+            }`}
+          >
+            <span
+              className={`shrink-0 px-1.5 py-0.5 text-[10px] font-black text-white ${s.tag}`}
+            >
+              {s.label}
+            </span>
+            <span className="shrink-0 text-base" aria-hidden>
+              {s.mark}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-sm font-bold">{e.message}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

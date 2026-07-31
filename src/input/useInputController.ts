@@ -1,20 +1,19 @@
 // ============================================================================
 // 入力送信層 — 操作3種のみをサーバーへ送る
 //
-// docs/rules/01 §7: 操作は「文字キー（打鍵）／Enter（AttackRequest）／0-9（StrategySelect）」の
-// 3種のみ。それ以外のキーは無視する。
+// 操作は「文字キー（打鍵）／0-9（StrategySelect）」の2種のみ。それ以外のキーは無視する。
 //
 // **重要（docs/rules/01 §2）**: raw keydown を1文字ずつサーバーへ送らない。
 //   - 文字キーは打鍵判定 (#8 TypingJudge) へ渡すだけ（`onCharKey`）。判定結果は
 //     ダケン単位で `DakenClearReport` に集約して送る（この層の責務外）。
-//   - Enter → `AttackRequest`、0-9 → `StrategySelect` のみ即時送信する。
+//   - 0-9 → `StrategySelect` のみ即時送信する。
 //
-// 戦闘数値（consumedCombo）はローカル算出しない。サーバーが全消費し consumedCombo は
-// 現状無視される（proto 注記）。表示中コンボ値をそのまま添える。
+// 攻撃は「Enter で撃つ」をやめ、サーバーがノーミスクリアを起点に自動発火する契約になった
+// （AttackRequest 廃止・server #77）。クライアントから攻撃を送る経路は無い。
 // ============================================================================
 
 import { useEffect, useState } from "react";
-import { MessageType, type AttackRequest, type StrategySelect } from "@/proto/types";
+import { MessageType, type StrategySelect } from "@/proto/types";
 import type { WsConnection } from "@/net";
 
 export interface InputControllerOptions {
@@ -23,8 +22,6 @@ export interface InputControllerOptions {
   active: boolean;
   /** 文字キー（打鍵）の受け渡し先。#8 TypingJudge が実装するまでは呼び出しのみ。 */
   onCharKey?: (char: string) => void;
-  /** AttackRequest に添える表示中コンボ値（サーバーは現状無視・全消費）。 */
-  consumedCombo?: number;
 }
 
 export interface InputController {
@@ -45,7 +42,7 @@ function isDakenChar(key: string): boolean {
 export function useInputController(
   options: InputControllerOptions,
 ): InputController {
-  const { connection, active, onCharKey, consumedCombo = 0 } = options;
+  const { connection, active, onCharKey } = options;
   const [selectedStrategyId, setSelectedStrategyId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -54,14 +51,6 @@ export function useInputController(
     const handler = (e: KeyboardEvent) => {
       // 修飾キー付き（ショートカット）は無視。IME 変換中も無視。
       if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
-
-      // Enter → AttackRequest
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const payload: AttackRequest = { consumedCombo };
-        connection.send(MessageType.AttackRequest, payload);
-        return;
-      }
 
       // 0-9 → StrategySelect
       if (isSingleChar(e.key) && /^[0-9]$/.test(e.key)) {
@@ -85,7 +74,7 @@ export function useInputController(
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [connection, active, onCharKey, consumedCombo]);
+  }, [connection, active, onCharKey]);
 
   return { selectedStrategyId };
 }

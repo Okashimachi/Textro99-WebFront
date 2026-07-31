@@ -1,23 +1,50 @@
-// ComboGauge — コンボ値の表示。値はサーバー由来（ComboUpdated）。ローカル算出しない。
+// ComboGauge — 攻撃力（コンボ）を円形バッジで示す。主ディスプレイの右下に重ねて使う。
+// 値はサーバー由来（ComboUpdated）。ローカル算出しない（docs/rules/01 §3）。
+// 表示方針: 打鍵中も視線を動かさずに済むよう、お題のすぐ脇で数字だけを大きく見せる。
+//
+// 攻撃は Enter ではなくサーバーがクリアごとに自動発火する（server #77）。撃っても
+// コンボは減らず伸び続け、ミス／時間切れで 0 リセットされる（ComboUpdated.reason=Miss）。
 import type { ComboState } from "@/state";
 
 interface Props {
   combo: ComboState;
 }
 
+// 満タン扱いの目安（表示だけ。戦闘の閾値ではない）。
+const GAUGE_FULL = 10;
+
 export function ComboGauge({ combo }: Props) {
+  const hot = combo.value >= GAUGE_FULL;
+  // reason=Miss は「ミス／時間切れでコンボが切れた」。直後だけ切断を明示する。
+  const broken = combo.lastReason === "Miss" && combo.value === 0;
+
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-4">
-      <div className="text-xs text-slate-400">コンボ</div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-sky-300">{combo.value}</span>
-        {combo.lastReason && (
-          <span className="text-xs text-slate-400">
-            {combo.lastDelta >= 0 ? `+${combo.lastDelta}` : combo.lastDelta} (
-            {combo.lastReason})
-          </span>
-        )}
-      </div>
+    <div
+      className={`flex h-20 w-20 flex-col items-center justify-center rounded-full border-4 shadow-sm ${
+        hot
+          ? "animate-danger-pulse border-amber-500 bg-amber-100"
+          : "border-red-500 bg-white"
+      }`}
+      title={`攻撃力（コンボ）${combo.value}${combo.lastReason ? ` / ${combo.lastReason}` : ""}`}
+    >
+      <span className="text-[9px] font-bold leading-none tracking-wide text-zinc-500">
+        攻撃力
+      </span>
+      <span
+        key={combo.value}
+        className={`animate-value-bump text-3xl font-black leading-none tabular-nums ${
+          hot ? "text-amber-600" : "text-red-600"
+        }`}
+      >
+        {combo.value}
+      </span>
+      <span
+        className={`text-[9px] font-bold leading-none ${
+          broken ? "text-red-600" : hot ? "text-amber-600" : "text-zinc-400"
+        }`}
+      >
+        {broken ? "とぎれた" : hot ? "MAX" : "連続で伸びる"}
+      </span>
     </div>
   );
 }

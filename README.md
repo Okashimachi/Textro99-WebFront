@@ -63,7 +63,7 @@ npm run dev
   - 受信 state JSON → 画面反映（表示は完全に受信 state ベース）
 ```
 
-**操作は3種のみ**：文字キー（打鍵）／Enter（`AttackRequest`）／0〜9（`StrategySelect`）。
+**操作は2種のみ**：文字キー（打鍵）／0〜9（`StrategySelect`）。攻撃はサーバーがクリアで自動発火する（`AttackRequest` は廃止）。接続後は `MatchmakingJoin{displayName}` を1回だけ送る（送らないと盤面の名前が接続IDになる）。
 
 ---
 
