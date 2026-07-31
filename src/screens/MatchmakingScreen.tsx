@@ -1,4 +1,10 @@
-// マッチング待機画面。待機人数・カウントダウンを表示し、参加/離脱を送る。
+// マッチング待機画面。待機人数・カウントダウンを表示し、離脱を送る。
+//
+// 試合開始のタイミングはサーバー権威（docs/rules/01 §1,§3）。サーバーが最低人数の到達を
+// 検出してカウントダウンを開始し、MatchmakingStatus.countdownMs で残り時間を配信する。
+// この画面は**受け取った残り時間を描画するだけ**で、開始を決めない。
+// （countdownMs が来なければ「人数待ち」表示のまま。ローカルで秒数を数え始めない。）
+//
 // 表示は MatchmakingStatus DTO のみ。送信は props のコールバック（実体は入力/ネット層）。
 import type { MatchmakingStatus } from "@/proto/types";
 import { useNow } from "@/components/hud/useNow";
@@ -10,7 +16,7 @@ interface Props {
   onLeave: () => void;
   /** 開発ツール（ログ/デバッグペイン等）の表示状態。 */
   showDevTools?: boolean;
-  /** 開発ツールの表示切替（マッチング中に本番相当の画面へ切り替えるため）。 */
+  /** 開発ツールの表示切替。未指定なら切替UIを出さない（実運用フロー）。 */
   onToggleDevTools?: (show: boolean) => void;
   /**
    * 開始カウントダウンの終了時刻(ms epoch)。マッチング完了直後の 3 秒間だけ非 null。
@@ -36,11 +42,17 @@ export function MatchmakingScreen({
       : null;
   const starting = startRemainMs != null;
 
-  // カウントダウンは表示のみ（サーバー countdownMs を基準に残り時間を描画）。
+  // 開始待ちカウントダウン。サーバー countdownMs を基準に残り時間を描画するだけ。
   const remainMs =
     status?.countdownMs != null && statusReceivedAtMs != null
       ? Math.max(0, status.countdownMs - (now - statusReceivedAtMs))
       : null;
+
+  const waiting = status?.waitingCount ?? 0;
+  const minPlayers = status?.minPlayers ?? null;
+  // 最低人数までの残り。カウントダウン中は「到達済み」なので出さない。
+  const shortBy =
+    minPlayers != null && remainMs == null ? Math.max(0, minPlayers - waiting) : 0;
 
   return (
     <div className="flex flex-col items-center gap-4 py-12">
@@ -57,20 +69,26 @@ export function MatchmakingScreen({
         </div>
       ) : (
         <div className="border border-zinc-300 bg-white px-8 py-6 text-center">
-          <div className="text-5xl font-black tabular-nums text-red-600">
-            {status?.waitingCount ?? 0}
-          </div>
+          <div className="text-5xl font-black tabular-nums text-red-600">{waiting}</div>
           <div className="mt-1 text-sm text-zinc-500">
-            待機人数（最少 {status?.minPlayers ?? "—"} 人）
+            参加中{minPlayers != null && `（最少 ${minPlayers} 人で開始）`}
           </div>
 
-          {remainMs != null && (
-            <div className="mt-4 text-2xl font-bold text-zinc-900 tabular-nums">
-              開始まで {(remainMs / 1000).toFixed(1)}s
+          {remainMs != null ? (
+            <div className="mt-4">
+              <div className="text-3xl font-bold tabular-nums text-zinc-900">
+                開始まで {Math.ceil(remainMs / 1000)}s
+              </div>
+              <div className="mt-1 text-xs text-zinc-500">
+                この間も他のプレイヤーが参加できます
+              </div>
             </div>
-          )}
-          {remainMs == null && (
-            <div className="mt-4 text-sm text-zinc-500">プレイヤーを待っています…</div>
+          ) : (
+            <div className="mt-4 text-sm text-zinc-500">
+              {shortBy > 0
+                ? `あと ${shortBy} 人でカウントダウン開始`
+                : "プレイヤーを待っています…"}
+            </div>
           )}
         </div>
       )}
