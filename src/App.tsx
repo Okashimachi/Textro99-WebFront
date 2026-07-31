@@ -7,10 +7,15 @@
 // 実行モード:
 //   - online: 実サーバー（VITE_WS_URL）へ WebSocket 接続（autoReconnect でコールドスタート吸収）
 //   - practice: フロント完結（src/dev/mockServer がランダム出題）
-// 拡張の継ぎ目: 部屋制・名前のサーバー送信・厳密順位は後日（memory: textro99-screen-flow-decisions）。
-import { useCallback, useEffect, useMemo, useState } from "react";
+// 拡張の継ぎ目: 部屋制は後日（memory: textro99-screen-flow-decisions）。
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WsConnection, type ConnectionStatus } from "@/net";
-import { MessageType, type DakenClearReport, type Envelope } from "@/proto/types";
+import {
+  MessageType,
+  type DakenClearReport,
+  type Envelope,
+  type MatchmakingJoin,
+} from "@/proto/types";
 import { useGameState } from "@/state";
 import { ScreenRouter, useScreenPhase, type ScreenActions } from "@/screens";
 import { TitleScreen, ModeSelectScreen, NameEntryScreen, type PlayMode } from "@/screens/setup";
@@ -44,6 +49,21 @@ export function App() {
 
   useEffect(() => connection.onStatusChange(setStatus), [connection]);
 
+  // 接続が開いたら MatchmakingJoin{displayName} を1回送る。
+  // サーバーは接続後の最初の1通を参加メッセージとして読み、そこで盤面の表示名を確定する
+  // （送らない・遅いと接続IDへフォールバックする）。再接続＝新しい試合登録なので、
+  // open するたびに送る（1接続=1試合の契約）。
+  const displayNameRef = useRef(profile.displayName);
+  displayNameRef.current = profile.displayName;
+  useEffect(() => {
+    return connection.onStatusChange((s) => {
+      if (s !== "open") return;
+      connection.send(MessageType.MatchmakingJoin, {
+        displayName: displayNameRef.current,
+      } satisfies MatchmakingJoin);
+    });
+  }, [connection]);
+
   // 接続/モックは in-game の間だけ動かす。title/mode/name では接続しない。
   useEffect(() => {
     if (stage !== "in-game") return;
@@ -52,7 +72,10 @@ export function App() {
       return () => connection.disconnect();
     }
     connection.disconnect();
-    const stop = startMockServer(connection, { selfId: profile.displayName || "you" });
+    const stop = startMockServer(connection, {
+      selfId: profile.displayName || "you",
+      displayName: profile.displayName,
+    });
     return stop;
     // profile.displayName は開始時に確定済み。依存に入れて再起動させない。
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -80,7 +103,6 @@ export function App() {
   const { selectedStrategyId } = useInputController({
     connection,
     active: inputActive,
-    consumedCombo: state.combo.value,
     onCharKey: registerChar,
   });
 
@@ -95,7 +117,7 @@ export function App() {
     (name: string) => {
       setDisplayName(name);
       setBackend(pendingMode === "online" ? "server" : "mock");
-      // 拡張の継ぎ目: サーバーが名前対応 C2S を持ったら、ここで join 時に profile を送る。
+      // 名前は接続 open 時の MatchmakingJoin で送る（上の onStatusChange）。
       actions.seekMatch(); // MatchStart までは matchmaking 表示
       setStage("in-game");
     },
@@ -155,8 +177,10 @@ export function App() {
           // MatchmakingJoin 送信では再戦できない）。mock はメッセージで新試合を開始する。
           join: () =>
             backend === "server"
-              ? connection.reconnect()
-              : connection.send(MessageType.MatchmakingJoin, {}),
+              ? connection.reconnect() // open 時に MatchmakingJoin を送り直す
+              : connection.send(MessageType.MatchmakingJoin, {
+                  displayName: profile.displayName,
+                } satisfies MatchmakingJoin),
           leave: () => connection.send(MessageType.MatchmakingLeave, {}),
         }}
         selectedStrategyId={selectedStrategyId}

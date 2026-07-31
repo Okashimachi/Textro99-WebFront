@@ -51,7 +51,7 @@ export function DakenDisplay({ activeDaken, typedPrefix = "", missCount = 0 }: P
             {romajiHint(current.text)}
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            ローマ字で入力（Enter=攻撃 / 0-9=作戦）
+            ローマ字で入力（0-9=作戦 / 攻撃はクリアで自動発火）
           </div>
         </div>
       ) : (

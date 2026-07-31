@@ -11,6 +11,7 @@
 
 import {
   MessageType,
+  type DakenClearReport,
   type DakenInstance,
   type Envelope,
   type PlayerSummary,
@@ -32,6 +33,8 @@ export const randomWord = () => WORDS[Math.floor(Math.random() * WORDS.length)];
 export interface MockServerOptions {
   /** 自分の表示上の playerId。 */
   selfId?: string;
+  /** 盤面に出す自分の表示名（実サーバーは MatchmakingJoin で受け取る）。 */
+  displayName?: string;
 }
 
 /**
@@ -70,12 +73,13 @@ export function startMockServer(
 
   const self: PlayerSummary = {
     playerId: selfId,
-    displayName: "あなた",
+    displayName: options.displayName || "あなた",
     comboValue: 0,
     dakenStackCount: 0,
     dakenStackLimit: 20,
     badgeCount: 0,
     alive: true,
+    rank: 1, // 練習は1人なので常に首位（順位はサーバー確定値・#80）
   };
 
   // 試合開始シーケンス（初期化・再マッチング双方から呼ぶ）。
@@ -119,15 +123,18 @@ export function startMockServer(
     } else if (env.type === MessageType.DakenClearReport) {
       // 実サーバーに合わせる: クリアしたお題は DakenExpired せず、次の DakenIssued のみ返す。
       // クリア済みお題の active からの除去はクライアント（App.onClear）が行う。
-      combo += 1;
-      recv(MessageType.ComboUpdated, { comboValue: combo, delta: 1, reason: "Clear" });
+      // 攻撃はサーバーがクリアで自動発火し、コンボは消費されず伸び続ける（#77）。
+      // ミス（missCount>0）は reason=Miss で 0 リセット。時間切れも同じ扱い。
+      const report = env.payload as DakenClearReport;
+      if (report.missCount > 0) {
+        recv(MessageType.ComboUpdated, { comboValue: 0, delta: -combo, reason: "Miss" });
+        combo = 0;
+      } else {
+        combo += 1;
+        recv(MessageType.ComboUpdated, { comboValue: combo, delta: 1, reason: "Clear" });
+      }
       recv(MessageType.DakenStackUpdated, { count: 0, limit: 20, trapPending: false });
       recv(MessageType.DakenIssued, { daken: [nextDaken()] });
-    } else if (env.type === MessageType.AttackRequest) {
-      // Enter=攻撃。コンボ全消費（模擬）。
-      const consumed = combo;
-      combo = 0;
-      recv(MessageType.ComboUpdated, { comboValue: 0, delta: -consumed, reason: "Consumed" });
     }
     // StrategySelect はローカルでは応答不要（選択表示は入力層が持つ）。
   });

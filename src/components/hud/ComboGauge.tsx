@@ -1,6 +1,9 @@
 // ComboGauge — 攻撃力（コンボ）を円形バッジで示す。主ディスプレイの右下に重ねて使う。
 // 値はサーバー由来（ComboUpdated）。ローカル算出しない（docs/rules/01 §3）。
 // 表示方針: 打鍵中も視線を動かさずに済むよう、お題のすぐ脇で数字だけを大きく見せる。
+//
+// 攻撃は Enter ではなくサーバーがクリアごとに自動発火する（server #77）。撃っても
+// コンボは減らず伸び続け、ミス／時間切れで 0 リセットされる（ComboUpdated.reason=Miss）。
 import type { ComboState } from "@/state";
 
 interface Props {
@@ -12,6 +15,8 @@ const GAUGE_FULL = 10;
 
 export function ComboGauge({ combo }: Props) {
   const hot = combo.value >= GAUGE_FULL;
+  // reason=Miss は「ミス／時間切れでコンボが切れた」。直後だけ切断を明示する。
+  const broken = combo.lastReason === "Miss" && combo.value === 0;
 
   return (
     <div
@@ -35,10 +40,10 @@ export function ComboGauge({ combo }: Props) {
       </span>
       <span
         className={`text-[9px] font-bold leading-none ${
-          hot ? "text-amber-600" : "text-zinc-400"
+          broken ? "text-red-600" : hot ? "text-amber-600" : "text-zinc-400"
         }`}
       >
-        {hot ? "MAX" : "⏎ 攻撃"}
+        {broken ? "とぎれた" : hot ? "MAX" : "連続で伸びる"}
       </span>
     </div>
   );

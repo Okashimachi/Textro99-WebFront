@@ -11,11 +11,13 @@
 //   │      │         │ │ いま打つお題 (+攻撃力)│ │ 地色で危険度）│
 //   └──────────────────────────────────────────────────────┘
 //
-// 被弾予告は NEXT のトラップ／被弾ダケン（色で区別）に統合したため専用パネルを持たない。
+// 被弾ダケン自体は NEXT に色で表れる。それとは別に、着弾までの猶予（graceMs）がある予告は
+// 中央の通知の上でカウントダウン表示する（IncomingAttacks・予告が無いときは何も出さない）。
 // お題のストック（被弾スタック）が危険域に入ると、画面全体を赤くフラッシュさせて警告する（表示のみ）。
 import type { GameViewModel } from "@/state";
 import { StrategySelector } from "@/components/hud/StrategySelector";
 import { EventLog } from "@/components/hud/EventLog";
+import { IncomingAttacks } from "@/components/hud/IncomingAttacks";
 import { LiveRanking } from "@/components/hud/LiveRanking";
 import { MatchStatusBar } from "@/components/hud/MatchStatusBar";
 import { NextQueue } from "@/components/hud/NextQueue";
@@ -99,6 +101,10 @@ export function InMatchScreen({
         {/* 中央：作戦 → 通知 → 主ディスプレイ（攻撃力を内包） */}
         <div className="order-1 flex min-h-0 flex-col gap-2 lg:order-2">
           <StrategySelector selectedStrategyId={selectedStrategyId} />
+          <IncomingAttacks
+            incomingAttacks={state.incomingAttacks}
+            players={state.players}
+          />
           <EventLog events={state.events} />
           <PlayField
             activeDaken={state.activeDaken}
