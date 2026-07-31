@@ -20,7 +20,11 @@ export interface PlayerView extends PlayerSummary {
   stackRatio?: number;
 }
 
-/** 進行中の被弾予告（AttackIncoming）。OffsetResolved で除去する。 */
+/**
+ * 進行中の被弾予告（AttackIncoming）。
+ * 消化を知らせる S2C は無く、着弾は grace 経過後にサーバーが DakenIssued /
+ * DakenStackUpdated で示す。表示側は receivedAtMs + graceMs を過ぎたものを出さない。
+ */
 export interface IncomingAttack {
   warningId: string;
   attackerId: PlayerId;
@@ -29,12 +33,7 @@ export interface IncomingAttack {
   receivedAtMs: number; // クライアント受信時刻（表示カウントダウンの基準・表示専用）
 }
 
-export type GameEventKind =
-  | "Welcome"
-  | "Ko"
-  | "AttackFailed"
-  | "OffsetResolved"
-  | "GameOver";
+export type GameEventKind = "Welcome" | "Ko" | "GameOver";
 
 /** EventLog 表示用の直近イベント（サーバー通知を写しただけ・派生計算なし）。 */
 export interface GameEvent {

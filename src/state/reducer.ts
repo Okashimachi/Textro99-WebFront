@@ -7,7 +7,6 @@
 
 import {
   MessageType,
-  type AttackFailed,
   type AttackIncoming,
   type ComboUpdated,
   type DakenExpired,
@@ -18,7 +17,7 @@ import {
   type KoNotified,
   type MatchStart,
   type MatchmakingStatus,
-  type OffsetResolved,
+  type PlayerId,
   type PlayerListDelta,
   type PlayerListUpdated,
   type Welcome,
@@ -100,7 +99,15 @@ export function gameReducer(
 
     case MessageType.DakenIssued: {
       const p = payload as DakenIssued;
-      return { ...state, activeDaken: [...state.activeDaken, ...p.daken] };
+      // insertIndex はサーバー指定の挿入位置（被弾を列の途中へ割り込ませる用）。
+      // 省略なら従来どおり末尾に積む。位置の決定はサーバー権威で、ここでは写すだけ。
+      const next = [...state.activeDaken];
+      const at =
+        p.insertIndex === undefined
+          ? next.length
+          : Math.min(Math.max(p.insertIndex, 0), next.length);
+      next.splice(at, 0, ...p.daken);
+      return { ...state, activeDaken: next };
     }
 
     case MessageType.DakenExpired: {
@@ -141,10 +148,15 @@ export function gameReducer(
 
     case MessageType.AttackIncoming: {
       const p = payload as AttackIncoming;
+      // 予告の消化を知らせる S2C は無い（着弾はサーバーが DakenIssued / DakenStackUpdated で示す）。
+      // そのため grace 経過ぶんは表示側で落とす。ここでは配列が伸び続けないよう、
+      // 新しい予告を積むついでに期限切れを掃除するだけ（表示専用・戦闘判定はしない）。
       return {
         ...state,
         incomingAttacks: [
-          ...state.incomingAttacks,
+          ...state.incomingAttacks.filter(
+            (a) => a.receivedAtMs + a.graceMs > receivedAtMs,
+          ),
           {
             warningId: p.warningId,
             attackerId: p.attackerId,
@@ -156,37 +168,14 @@ export function gameReducer(
       };
     }
 
-    case MessageType.AttackFailed: {
-      const p = payload as AttackFailed;
-      return {
-        ...state,
-        ...pushEvent(state, "AttackFailed", `攻撃不成立: ${p.reason}`, receivedAtMs),
-      };
-    }
-
-    case MessageType.OffsetResolved: {
-      const p = payload as OffsetResolved;
-      // 予告を消化。撃ち返しがあれば新規予告は別途 AttackIncoming で届くため、ここでは除去のみ。
-      return {
-        ...state,
-        incomingAttacks: state.incomingAttacks.filter(
-          (a) => a.warningId !== p.warningId,
-        ),
-        ...pushEvent(
-          state,
-          "OffsetResolved",
-          `相殺 ${p.offsetAmount} / 残り着弾 ${p.remainderDakenCount}`,
-          receivedAtMs,
-        ),
-      };
-    }
-
     case MessageType.KoNotified: {
       const p = payload as KoNotified;
+      // attackerId が null の脱落は自滅（KO実行者なし）。
+      const victim = displayNameOf(state.players, p.victimId);
       const msg =
         p.attackerId === null
-          ? `${p.victimId} が自滅`
-          : `${p.attackerId} が ${p.victimId} を撃破（+${p.badgesTransferred}）`;
+          ? `${victim} が自滅`
+          : `${displayNameOf(state.players, p.attackerId)} が ${victim} を撃破（+${p.badgesTransferred}）`;
       // alive フラグは PlayerListUpdated/Delta が正典。ここではイベント記録のみ。
       return { ...state, ...pushEvent(state, "Ko", msg, receivedAtMs) };
     }
@@ -224,6 +213,11 @@ export function gameReducer(
       // 未対応 S2C（DifficultyUpdated 以外の将来型など）は state を変えない。
       return state;
   }
+}
+
+/** playerId から表示名を引く（未知IDは ID をそのまま出す）。表示専用。 */
+function displayNameOf(players: PlayerView[], playerId: PlayerId): string {
+  return players.find((p) => p.playerId === playerId)?.displayName ?? playerId;
 }
 
 /**
