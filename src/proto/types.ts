@@ -208,9 +208,15 @@ export interface GameOver {
   typingStats: TypingStats;
 }
 
-// countdownMs はカウントダウン中のみ（Waiting 中は省略）。
+export interface WaitingPlayer {
+  displayName: string;
+}
+
+// countdownMs はカウントダウン中のみ（Waiting 中は省略）。値は残り時間（ms）。
+// players は現在待機中のプレイヤー名一覧。
 export interface MatchmakingStatus {
   waitingCount: number;
   minPlayers: number;
   countdownMs?: number;
+  players?: WaitingPlayer[];
 }
