@@ -32,8 +32,6 @@ interface Props {
   showDevTools?: boolean;
   /** 開発ツールの表示切替。 */
   onToggleDevTools?: (show: boolean) => void;
-  /** 開始カウントダウンの終了時刻(ms epoch)。マッチング完了直後のみ非 null。 */
-  startCountdownDeadlineMs?: number | null;
   /** 試合中ヘッダー右側の開発ツール（練習モードのみ）。 */
   inMatchDevTools?: React.ReactNode;
   /** 自分の試合結果。非 null の間、観戦画面の上にリザルトモーダルを重ねる。 */
@@ -55,7 +53,6 @@ export function ScreenRouter({
   selfDisplayName,
   showDevTools,
   onToggleDevTools,
-  startCountdownDeadlineMs,
   inMatchDevTools,
   matchResult = null,
   sessionEndDeadlineMs = null,
@@ -92,7 +89,6 @@ export function ScreenRouter({
           }}
           showDevTools={showDevTools}
           onToggleDevTools={onToggleDevTools}
-          startCountdownDeadlineMs={startCountdownDeadlineMs}
         />
       );
 

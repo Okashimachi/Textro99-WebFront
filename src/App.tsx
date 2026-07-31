@@ -61,7 +61,7 @@ export function App() {
 
   const { profile, setDisplayName } = useProfile();
   const { state, lastEnvelope } = useGameState(connection);
-  const { phase, inputActive, actions, startCountdownDeadlineMs, matchResult } =
+  const { phase, inputActive, actions, matchResult } =
     useScreenPhase(state);
   const [step, setStep] = useState(0);
   const [sentLog, setSentLog] = useState<{ envelope: Envelope; sent: boolean }[]>([]);
@@ -270,7 +270,6 @@ export function App() {
         showDevTools={showDevTools}
         // play 入口では切替UI自体を出さない（本番のプレイヤーが触る画面）。
         onToggleDevTools={devToolsAvailable ? setShowDevToolsPref : undefined}
-        startCountdownDeadlineMs={startCountdownDeadlineMs}
         matchResult={matchResult}
         sessionEndDeadlineMs={sessionEndDeadlineMs}
         onSessionEnd={exitToTitle}
