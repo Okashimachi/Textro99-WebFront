@@ -4,9 +4,10 @@
 import type { GameViewModel } from "@/state";
 import type { ScreenPhase } from "./lifecycle";
 import type { ScreenActions } from "./useScreenPhase";
+import type { GameOver } from "@/proto/types";
 import { InMatchScreen } from "./InMatchScreen";
 import { MatchmakingScreen } from "./MatchmakingScreen";
-import { ResultScreen } from "./ResultScreen";
+import { ResultOverlay } from "./ResultOverlay";
 
 /** 画面から発火するマッチング関連の送信。実体は App が connection.send で配線する。 */
 export interface MatchmakingNet {
@@ -35,6 +36,12 @@ interface Props {
   startCountdownDeadlineMs?: number | null;
   /** 試合中ヘッダー右側の開発ツール（練習モードのみ）。 */
   inMatchDevTools?: React.ReactNode;
+  /** 自分の試合結果。非 null の間、観戦画面の上にリザルトモーダルを重ねる。 */
+  matchResult?: GameOver | null;
+  /** セッション終了時刻(ms epoch)。試合が完全に終わったときだけ非 null。 */
+  sessionEndDeadlineMs?: number | null;
+  /** カウントダウン 0 到達。セッションを切ってタイトルへ戻す。 */
+  onSessionEnd?: () => void;
 }
 
 export function ScreenRouter({
@@ -50,6 +57,9 @@ export function ScreenRouter({
   onToggleDevTools,
   startCountdownDeadlineMs,
   inMatchDevTools,
+  matchResult = null,
+  sessionEndDeadlineMs = null,
+  onSessionEnd,
 }: Props) {
   switch (phase) {
     case "title":
@@ -99,28 +109,36 @@ export function ScreenRouter({
       );
 
     case "spectating":
+      // 脱落後・自分の試合終了後もランキングと敵の状況を見せ続ける。
+      // 自分の結果が出ていれば、その上にリザルトモーダルを重ねる。
       return (
-        <InMatchScreen
-          state={state}
-          selectedStrategyId={selectedStrategyId}
-          typedPrefix={typedPrefix}
-          missCount={missCount}
-          selfDisplayName={selfDisplayName}
-          spectating
-        />
-      );
-
-    case "result":
-      if (!state.gameOver) return <Placeholder title="リザルト">—</Placeholder>;
-      return (
-        <ResultScreen
-          result={state.gameOver}
-          onRematch={() => {
-            actions.rematch();
-            net.join();
-          }}
-          onBackToTitle={actions.backToTitle}
-        />
+        <>
+          <InMatchScreen
+            state={state}
+            selectedStrategyId={selectedStrategyId}
+            typedPrefix={typedPrefix}
+            missCount={missCount}
+            selfDisplayName={selfDisplayName}
+            spectating
+            spectatingNote={
+              matchResult
+                ? "あなたの試合は終了しました（結果は「リザルトを見る」から・操作は無効）"
+                : undefined
+            }
+          />
+          {matchResult && (
+            <ResultOverlay
+              result={matchResult}
+              sessionEndDeadlineMs={sessionEndDeadlineMs}
+              onRematch={() => {
+                actions.rematch();
+                net.join();
+              }}
+              onBackToTitle={actions.backToTitle}
+              onSessionEnd={onSessionEnd ?? actions.backToTitle}
+            />
+          )}
+        </>
       );
   }
 }
