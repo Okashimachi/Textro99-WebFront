@@ -93,6 +93,7 @@ export function gameReducer(
         aliveCount: p.players.filter((s) => s.alive).length,
         activeDaken: [p.initialDaken],
         gameOver: null,
+        defeatedBy: null,
         matchmaking: null,
         // 試合ごとの値は MatchStart で初期化する。前の試合の値が残っていると、
         // 新しい試合の開始直後に前試合の被弾スタック（＝危険警告）やコンボが見えてしまう。
@@ -189,8 +190,14 @@ export function gameReducer(
         p.attackerId === null
           ? `${victim} が自滅`
           : `${displayNameOf(state.players, p.attackerId)} が ${victim} を撃破（+${p.badgesTransferred}）`;
-      // alive フラグは PlayerListUpdated/Delta が正典。ここではイベント記録のみ。
-      return { ...state, ...pushEvent(state, "Ko", msg, receivedAtMs) };
+      // alive フラグは PlayerListUpdated/Delta が正典。ここではイベント記録と、
+      // 「自分を倒したのは誰か」の写し取りだけを行う（判定はしない）。
+      // GameOver DTO に撃破者は入らないため、リザルトで出すにはここで保持しておく。
+      const defeatedBy =
+        p.victimId === state.selfPlayerId
+          ? { attackerId: p.attackerId, badgesTransferred: p.badgesTransferred }
+          : state.defeatedBy;
+      return { ...state, defeatedBy, ...pushEvent(state, "Ko", msg, receivedAtMs) };
     }
 
     case MessageType.PlayerListUpdated: {

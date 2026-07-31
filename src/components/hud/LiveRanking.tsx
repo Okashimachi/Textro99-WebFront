@@ -42,6 +42,8 @@ export function LiveRanking({
   const selfRow = selfIndex >= 0 ? ranked[selfIndex] : undefined;
   // 表示は先頭 limit 件のみ。自分がそこに入らないときだけ末尾に自分の行を足す。
   const selfOutside = selfIndex >= limit ? ranked[selfIndex] : null;
+  // large では左右2列に割る（左が上位）。奇数なら左を1件多くする。
+  const half = Math.ceil(limit / 2);
 
   return (
     <Panel
@@ -51,28 +53,49 @@ export function LiveRanking({
       className={className}
       bodyClassName="p-2"
     >
-      <ul
-        className={
-          size === "large"
-            ? "flex h-full min-h-0 flex-col gap-1 overflow-hidden"
-            : "space-y-px"
-        }
-      >
-        {shown.map((r) => (
-          <Row
-            key={r.player.playerId}
-            r={r}
-            selfDisplayName={selfDisplayName}
-            size={size}
-          />
-        ))}
-        {selfOutside && (
-          <>
-            <li className="text-center text-[10px] leading-none text-zinc-500">⋯</li>
-            <Row r={selfOutside} selfDisplayName={selfDisplayName} size={size} />
-          </>
-        )}
-      </ul>
+      {size === "large" ? (
+        // パネルの幅は変えずに中を左右2列に割り、1列10人ずつで上位20人を出す。
+        <div className="grid h-full min-h-0 grid-cols-2 gap-x-2 overflow-hidden">
+          {[shown.slice(0, half), shown.slice(half)].map((column, i) => (
+            <ul key={i} className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
+              {column.map((r) => (
+                <Row
+                  key={r.player.playerId}
+                  r={r}
+                  selfDisplayName={selfDisplayName}
+                  size={size}
+                />
+              ))}
+              {/* 自分が上位 limit 件に入らないときだけ、右列の末尾に自分の行を足す。 */}
+              {i === 1 && selfOutside && (
+                <>
+                  <li className="text-center text-[10px] leading-none text-zinc-500">
+                    ⋯
+                  </li>
+                  <Row r={selfOutside} selfDisplayName={selfDisplayName} size={size} />
+                </>
+              )}
+            </ul>
+          ))}
+        </div>
+      ) : (
+        <ul className="space-y-px">
+          {shown.map((r) => (
+            <Row
+              key={r.player.playerId}
+              r={r}
+              selfDisplayName={selfDisplayName}
+              size={size}
+            />
+          ))}
+          {selfOutside && (
+            <>
+              <li className="text-center text-[10px] leading-none text-zinc-500">⋯</li>
+              <Row r={selfOutside} selfDisplayName={selfDisplayName} size={size} />
+            </>
+          )}
+        </ul>
+      )}
     </Panel>
   );
 }
@@ -93,35 +116,50 @@ function Row({
 }) {
   const name = r.isSelf && selfDisplayName ? selfDisplayName : r.player.displayName;
   const large = size === "large";
+  const dead = !r.player.alive;
   // 決着後は上位3位を色帯で立たせ、自分の行を太い枠で見つけやすくする（表示のみ）。
   const podium = large && !r.isSelf ? PODIUM_ROW[r.rank] : undefined;
+  // 自分と3位以上は一回り大きく（行の取り分と文字を上げる）。
+  const featured = large && (r.isSelf || (r.rank > 0 && r.rank <= 3));
+  // 脱落者は地を沈めて生存者と分ける（自分の行はもともと黒地なので据え置き）。
+  const deadTone = dead && !r.isSelf;
 
   return (
     <li
       className={`flex items-center tabular-nums ${
         large
-          ? `min-h-[2.25rem] max-h-14 flex-1 gap-3 border px-3 ${
+          ? // 件数が多いほど1行が薄くなるよう、行の高さはパネルに追従させる
+            // （下限を置くと 20 行で画面からあふれるため min-h-0）。
+            `min-h-0 gap-2 border px-2 leading-none ${
+              featured ? "flex-[1.4]" : "flex-1"
+            } ${
               r.isSelf
                 ? "border-zinc-900 bg-zinc-900 text-white"
-                : (podium ?? "border-zinc-200 bg-white text-zinc-900")
+                : deadTone
+                  ? "border-zinc-400 bg-zinc-300 text-zinc-600"
+                  : (podium ?? "border-zinc-200 bg-white text-zinc-900")
             }`
           : `gap-2 px-1.5 py-1 text-xs ${
               r.isSelf ? "bg-zinc-900 text-white" : "text-zinc-900"
             }`
-      } ${!r.player.alive ? (large ? "opacity-60" : "opacity-45") : ""}`}
+      } ${dead ? (large ? "opacity-80" : "opacity-45") : ""}`}
     >
       <span
         key={r.rank}
         className={`flex shrink-0 items-center justify-center font-black ${
-          large ? "w-10 animate-value-bump text-3xl" : "w-5"
-        } ${MEDAL[r.rank] ?? (r.isSelf ? "text-white" : "text-zinc-500")}`}
+          large ? (featured ? "w-9 text-2xl" : "w-8 text-xl") : "w-5"
+        } ${large ? "animate-value-bump" : ""} ${
+          deadTone
+            ? "text-zinc-500"
+            : (MEDAL[r.rank] ?? (r.isSelf ? "text-white" : "text-zinc-500"))
+        }`}
       >
         {rankLabel(r.rank)}
       </span>
       <span
-        className={`min-w-0 flex-1 truncate font-bold ${large ? "text-base" : ""} ${
-          !r.player.alive ? "line-through" : ""
-        }`}
+        className={`min-w-0 flex-1 truncate font-bold ${
+          large ? (featured ? "text-base" : "text-sm") : ""
+        } ${dead ? "line-through" : ""}`}
       >
         {name}
         {r.isSelf && (
@@ -130,17 +168,19 @@ function Row({
           </span>
         )}
       </span>
-      {!r.player.alive && (
+      {dead && (
         <span
-          className={`shrink-0 font-bold text-red-600 ${large ? "text-xs" : "text-[10px]"}`}
+          className={`shrink-0 font-bold ${large ? "text-xs" : "text-[10px]"} ${
+            deadTone ? "text-zinc-600" : "text-red-600"
+          }`}
         >
           脱落
         </span>
       )}
       <span
-        className={`shrink-0 font-bold ${large ? "text-lg" : "text-[11px]"} ${
-          r.isSelf ? "text-amber-300" : "text-amber-600"
-        }`}
+        className={`shrink-0 font-bold ${
+          large ? (featured ? "text-base" : "text-sm") : "text-[11px]"
+        } ${r.isSelf ? "text-amber-300" : deadTone ? "text-zinc-500" : "text-amber-600"}`}
       >
         {r.player.badgeCount}
       </span>

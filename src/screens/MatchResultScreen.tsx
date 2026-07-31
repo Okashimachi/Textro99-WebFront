@@ -12,9 +12,9 @@
 import type { GameOver } from "@/proto/types";
 import type { GameViewModel } from "@/state";
 import { LiveRanking } from "@/components/hud/LiveRanking";
-import { EventLog } from "@/components/hud/EventLog";
 import { PlayerGrid99 } from "@/components/PlayerGrid99";
 import { ResultBoard } from "./ResultBoard";
+import { ResultActions } from "./ResultActions";
 
 interface Props {
   state: GameViewModel;
@@ -42,7 +42,8 @@ export function MatchResultScreen({
   const matchOngoing = sessionEndDeadlineMs == null;
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-2.75rem)] max-w-[1600px] flex-col gap-2 py-2">
+    // 高さは1画面ぶんに固定する（min-h だと 20 行のランキングで画面外まで伸びてしまう）。
+    <div className="mx-auto flex h-[calc(100vh-2.75rem)] min-h-[560px] max-w-[1600px] flex-col gap-2 py-2">
       {/* 決着バナー：自分の結末を1行で。試合が続いている間は観戦中であることも出す。 */}
       <div
         className={`animate-plate-pop flex flex-wrap items-center gap-x-4 gap-y-1 border-2 px-4 py-2 ${
@@ -71,39 +72,56 @@ export function MatchResultScreen({
       </div>
 
       {/* 左: ランキング / 中: 敵の状況 / 右: リザルト。3つとも主役の大きさで並べる。 */}
-      <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(240px,0.85fr)_minmax(300px,1fr)_minmax(380px,1.3fr)]">
-        <div className="order-2 flex min-h-0 flex-col gap-2 lg:order-1">
+      {/* 決着後はランキングを上位20人まで出すため、その幅を厚くし敵の盤面を絞る。 */}
+      <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(260px,1fr)_minmax(220px,0.7fr)_minmax(380px,1.3fr)]">
+        {/* 左：ランキング（上位20人ぶんの高さを丸ごと使う） */}
+        <div className="order-2 min-h-0 lg:order-1">
           <LiveRanking
             players={state.players}
             selfPlayerId={state.selfPlayerId}
             selfDisplayName={selfDisplayName}
             size="large"
-            limit={7}
-            className="min-h-0 flex-1"
+            limit={20}
+            className="h-full overflow-hidden"
           />
-          {/* 戦況ログは決着後も動き続ける（誰が誰を倒したか） */}
-          <div className="shrink-0">
-            <EventLog events={state.events} />
-          </div>
         </div>
 
+        {/* 中：敵の状況（決着後も動き続ける）
+            戦況ログはランキング20行ぶんの高さを確保するため、この画面では出さない
+            （誰にやられたかはリザルトの DEFEATED BY、脱落状況はランキングで分かる）。 */}
         <div className="order-3 min-h-0 lg:order-2">
           <PlayerGrid99
             players={state.players}
             selfPlayerId={state.selfPlayerId}
             size="large"
-            className="h-full"
+            className="h-full overflow-hidden"
           />
         </div>
 
-        <div className="order-1 min-h-0 lg:order-3">
+        {/* 右：戦績（読むところ）＋操作（押すところ）。別ブロックにして役割を分ける。 */}
+        <div className="order-1 flex min-h-0 flex-col gap-2 lg:order-3">
           <ResultBoard
             result={result}
+            // 表示名の解決だけ（サーバーが送った attackerId を players から引く）。
+            // 未受信＝undefined（表示しない）／自滅＝null。
+            defeatedByName={
+              state.defeatedBy === null
+                ? undefined
+                : state.defeatedBy.attackerId === null
+                  ? null
+                  : (state.players.find(
+                      (p) => p.playerId === state.defeatedBy!.attackerId,
+                    )?.displayName ?? state.defeatedBy.attackerId)
+            }
+            defeatedBadges={state.defeatedBy?.badgesTransferred ?? 0}
+            className="min-h-0 flex-1 overflow-y-auto"
+          />
+          <ResultActions
             sessionEndDeadlineMs={sessionEndDeadlineMs}
             onRematch={onRematch}
             onBackToTitle={onBackToTitle}
             onSessionEnd={onSessionEnd}
-            className="h-full"
+            className="shrink-0"
           />
         </div>
       </div>
