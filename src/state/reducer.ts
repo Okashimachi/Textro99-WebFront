@@ -254,6 +254,17 @@ function matchmakingEventMessage(
     return `最低人数を下回りカウントダウン中止（待機 ${next.waitingCount} 人）`;
   }
 
+  // 誰が来た/抜けたかは players の差分で出す（同名が複数いる可能性があるため件数も併記）。
+  const joined = nameDiff(next.players, prev.players);
+  if (joined.length > 0) {
+    return `${joined.join(" / ")} が参加（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+  const left = nameDiff(prev.players, next.players);
+  if (left.length > 0) {
+    return `${left.join(" / ")} が離脱（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+
+  // players 未配信のサーバー（旧版）へのフォールバック。人数の増減だけを出す。
   const diff = next.waitingCount - prev.waitingCount;
   if (diff > 0) {
     return `プレイヤーが参加 +${diff}（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
@@ -262,6 +273,25 @@ function matchmakingEventMessage(
     return `プレイヤーが離脱 ${diff}（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
   }
   return null;
+}
+
+/** a にあって b に無い表示名を返す（同名の重複ぶんも数える）。表示専用。 */
+function nameDiff(
+  a: MatchmakingStatus["players"],
+  b: MatchmakingStatus["players"],
+): string[] {
+  if (!a) return [];
+  const remain = new Map<string, number>();
+  for (const p of b ?? []) {
+    remain.set(p.displayName, (remain.get(p.displayName) ?? 0) + 1);
+  }
+  const out: string[] = [];
+  for (const p of a) {
+    const n = remain.get(p.displayName) ?? 0;
+    if (n > 0) remain.set(p.displayName, n - 1);
+    else out.push(p.displayName);
+  }
+  return out;
 }
 
 /** playerId から表示名を引く（未知IDは ID をそのまま出す）。表示専用。 */

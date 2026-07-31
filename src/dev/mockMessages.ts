@@ -26,14 +26,33 @@ export const MOCK_SEQUENCE: { label: string; envelope: Envelope }[] = [
     label: "MatchmakingStatus (待機)",
     envelope: {
       type: MessageType.MatchmakingStatus,
-      payload: { waitingCount: 42, minPlayers: 20 },
+      payload: {
+        waitingCount: 3,
+        minPlayers: 20,
+        players: [
+          { displayName: "あなた" },
+          { displayName: "たろう" },
+          { displayName: "はなこ" },
+        ],
+      },
     },
   },
   {
     label: "MatchmakingStatus (カウントダウン)",
     envelope: {
       type: MessageType.MatchmakingStatus,
-      payload: { waitingCount: 99, minPlayers: 20, countdownMs: 5000 },
+      // countdownMs は受信時点の残り時間(ms)。画面側が受信時刻を起点に補間する。
+      payload: {
+        waitingCount: 4,
+        minPlayers: 20,
+        countdownMs: 15000,
+        players: [
+          { displayName: "あなた" },
+          { displayName: "たろう" },
+          { displayName: "はなこ" },
+          { displayName: "じろう" },
+        ],
+      },
     },
   },
   {
