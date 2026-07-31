@@ -99,6 +99,18 @@ export function MatchResultScreen({
         <div className="order-1 min-h-0 lg:order-3">
           <ResultBoard
             result={result}
+            // 表示名の解決だけ（サーバーが送った attackerId を players から引く）。
+            // 未受信＝undefined（表示しない）／自滅＝null。
+            defeatedByName={
+              state.defeatedBy === null
+                ? undefined
+                : state.defeatedBy.attackerId === null
+                  ? null
+                  : (state.players.find(
+                      (p) => p.playerId === state.defeatedBy!.attackerId,
+                    )?.displayName ?? state.defeatedBy.attackerId)
+            }
+            defeatedBadges={state.defeatedBy?.badgesTransferred ?? 0}
             sessionEndDeadlineMs={sessionEndDeadlineMs}
             onRematch={onRematch}
             onBackToTitle={onBackToTitle}

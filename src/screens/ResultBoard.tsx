@@ -14,6 +14,13 @@ import { SESSION_END_COUNTDOWN_MS } from "./sessionEnd";
 
 interface Props {
   result: GameOver;
+  /**
+   * 自分にトドメを刺した相手の表示名。自滅なら null、優勝（＝倒されていない）なら undefined。
+   * 名前の解決は呼び出し側（MatchResultScreen）が players から行う。
+   */
+  defeatedByName?: string | null;
+  /** その KO で相手に渡ったバッジ数（サーバー値）。 */
+  defeatedBadges?: number;
   /** セッション終了時刻(ms epoch)。試合が完全に終わるまでは null。 */
   sessionEndDeadlineMs: number | null;
   onRematch: () => void;
@@ -25,6 +32,8 @@ interface Props {
 
 export function ResultBoard({
   result,
+  defeatedByName,
+  defeatedBadges = 0,
   sessionEndDeadlineMs,
   onRematch,
   onBackToTitle,
@@ -92,6 +101,31 @@ export function ResultBoard({
           {isWin ? "優勝！" : "位"}
         </span>
       </div>
+
+      {/* トドメを刺した相手（優勝時は出さない）。KoNotified をそのまま出すだけ。 */}
+      {!isWin && defeatedByName !== undefined && (
+        <div className="shrink-0 border-2 border-zinc-900 bg-zinc-900 px-4 py-3 text-white">
+          <div className="text-[11px] font-black uppercase tracking-[0.25em] text-zinc-400">
+            Defeated by
+          </div>
+          {defeatedByName === null ? (
+            <div className="mt-0.5 text-3xl font-black leading-tight text-zinc-300">
+              自滅
+            </div>
+          ) : (
+            <div className="mt-0.5 flex items-baseline gap-3">
+              <span className="min-w-0 flex-1 truncate text-4xl font-black leading-tight">
+                {defeatedByName}
+              </span>
+              {defeatedBadges > 0 && (
+                <span className="shrink-0 text-lg font-bold tabular-nums text-amber-300">
+                  バッジ {defeatedBadges} を献上
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 撃破・バッジは戦績の主指標なので大きく2枚 */}
       <div className="grid shrink-0 grid-cols-2 gap-2">
