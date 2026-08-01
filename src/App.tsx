@@ -24,12 +24,7 @@ import {
   type MatchmakingJoin,
 } from "@/proto/types";
 import { useGameState } from "@/state";
-import {
-  ScreenRouter,
-  useScreenPhase,
-  SESSION_END_COUNTDOWN_MS,
-  type ScreenActions,
-} from "@/screens";
+import { ScreenRouter, useScreenPhase, type ScreenActions } from "@/screens";
 import { isConnectionFinished } from "@/screens/sessionEnd";
 import { TitleScreen, ModeSelectScreen, NameEntryScreen, type PlayMode } from "@/screens/setup";
 import { useInputController } from "@/input";
@@ -184,18 +179,10 @@ export function App() {
     [entry, pendingMode, actions, setDisplayName, connection],
   );
 
-  // 試合が完全に終わった時刻（サーバーが接続を切った時点）から数える終了カウントダウン。
-  // 到達でセッションを切ってタイトルへ戻す。練習（mock）は接続が無いので対象外。
-  const [sessionEndDeadlineMs, setSessionEndDeadlineMs] = useState<number | null>(null);
-  useEffect(() => {
-    if (!matchResult || backend !== "server" || stage !== "in-game") {
-      setSessionEndDeadlineMs(null);
-      return;
-    }
-    if (!isConnectionFinished(status)) return;
-    // 一度決めた期限は据え置く（status が揺れても伸ばさない）。
-    setSessionEndDeadlineMs((prev) => prev ?? Date.now() + SESSION_END_COUNTDOWN_MS);
-  }, [matchResult, backend, stage, status]);
+  // 試合が完全に終わったか（サーバーが接続を切ったこと）。練習（mock）は接続が無いので対象外。
+  // タイトルへ戻るのは自動遷移せず、プレイヤーが「タイトルへ」を押すまで待つ。
+  const matchEnded =
+    !!matchResult && backend === "server" && stage === "in-game" && isConnectionFinished(status);
 
   // マッチングから抜ける共通処理。**待機列を離れる経路は必ずここを通す。**
   //
@@ -223,7 +210,6 @@ export function App() {
   const exitToTitle = useCallback(() => {
     // セッションを明示的に切ってから戻る（待機列にも残さない）。
     leaveRoom();
-    setSessionEndDeadlineMs(null);
     actions.backToTitle();
     setStage("title");
   }, [actions, leaveRoom]);
@@ -247,7 +233,6 @@ export function App() {
       rematch: () => {
         joinArmedRef.current = true;
         connection.setAutoReconnect(true);
-        setSessionEndDeadlineMs(null);
         actions.rematch();
       },
     }),
@@ -323,8 +308,7 @@ export function App() {
         // play 入口では切替UI自体を出さない（本番のプレイヤーが触る画面）。
         onToggleDevTools={devToolsAvailable ? setShowDevToolsPref : undefined}
         matchResult={matchResult}
-        sessionEndDeadlineMs={sessionEndDeadlineMs}
-        onSessionEnd={exitToTitle}
+        matchEnded={matchEnded}
         inMatchDevTools={
           // 練習（フロント完結）モードのみ。オンライン対戦では出さない。
           backend === "mock" ? (

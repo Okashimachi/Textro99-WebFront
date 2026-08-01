@@ -43,7 +43,7 @@ rm -rf
 - **1 Issue につき作業ブランチ（`feature/xxx`）を1本切り、PR を1つ作る**のを基本単位とする。
 - 必要なら**さらに細かく**ブランチ／PR を分けてよい（1 Issue を複数 PR に割ってもよい）。レビュー可能な粒度を優先する。
 - ブランチ名は Issue が分かる形にする（例: `feature/3-scaffold` / `feature/proto-vendoring`）。
-- PR 本文に対応 Issue を書く（`Closes #3` 等）。作業ログ（[docs/worklog](../worklog/README.md)）も紐付ける。
+- PR 本文に対応 Issue を書く（`Closes #3` 等）。
 - **PR を出したら人間のレビュー／マージを待つ間に、次の Issue に進んでよい**（手を止めない）。`develop`/`main` へのマージは §2 の通り人間が行う。
 
 ## 7. 統合用ブランチ（マージ待ちの状態が必要なとき）
