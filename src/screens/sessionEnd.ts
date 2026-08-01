@@ -7,7 +7,7 @@
 import type { ConnectionStatus } from "@/net";
 
 /** 試合完全終了からセッションを切ってタイトルへ戻るまでの猶予(ms)。 */
-export const SESSION_END_COUNTDOWN_MS = 15_000;
+export const SESSION_END_COUNTDOWN_MS = 30_000;
 
 /** 接続がもう戻らない（＝サーバーが切った）状態か。 */
 export function isConnectionFinished(status: ConnectionStatus): boolean {

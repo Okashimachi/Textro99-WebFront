@@ -24,6 +24,7 @@ import {
 } from "@/proto/types";
 import {
   MAX_EVENTS,
+  createInitialViewModel,
   type GameEvent,
   type GameEventKind,
   type GameViewModel,
@@ -37,6 +38,19 @@ export interface S2CAction {
   /** クライアント受信時刻（表示専用。カウントダウン等の基準に使う）。 */
   receivedAtMs: number;
 }
+
+/**
+ * セッションを張り直すときの初期化。受信 state はすべて捨てる。
+ *
+ * 受信メッセージではなくクライアント都合の操作なので、S2C とは別の action にしてある。
+ * これが無いと、離脱して入り直したときに**前のセッションの待機者一覧や盤面が残ったまま**
+ * 表示され、新しい MatchmakingStatus が届くまで実態とズレる。
+ */
+export interface ResetAction {
+  type: "@reset";
+}
+
+export type GameAction = S2CAction | ResetAction;
 
 function pushEvent(
   state: GameViewModel,
@@ -53,8 +67,10 @@ function pushEvent(
 
 export function gameReducer(
   state: GameViewModel,
-  action: S2CAction,
+  action: GameAction,
 ): GameViewModel {
+  if (action.type === "@reset") return createInitialViewModel();
+
   const { payload, receivedAtMs } = action;
 
   switch (action.type) {
@@ -190,7 +206,8 @@ export function gameReducer(
       const msg =
         p.attackerId === null
           ? `${victim} が自滅`
-          : `${displayNameOf(state.players, p.attackerId)} が ${victim} を撃破（+${p.badgesTransferred}）`;
+          : // バッジ数は文言に出さない（概念を表示しない方針）。値は state に保持する。
+            `${displayNameOf(state.players, p.attackerId)} が ${victim} を撃破`;
       // alive フラグは PlayerListUpdated/Delta が正典。ここではイベント記録と、
       // 「自分を倒したのは誰か」の写し取りだけを行う（判定はしない）。
       // GameOver DTO に撃破者は入らないため、リザルトで出すにはここで保持しておく。

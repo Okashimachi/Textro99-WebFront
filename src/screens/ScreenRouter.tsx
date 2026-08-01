@@ -79,9 +79,14 @@ export function ScreenRouter({
           status={state.matchmaking}
           statusReceivedAtMs={state.matchmakingReceivedAtMs}
           // 待機中の進行（参加/離脱・カウントダウン開始/中止）の履歴。
-          events={state.events.filter(
-            (e) => e.kind === "Matchmaking" || e.kind === "Welcome",
-          )}
+          // テスト用のログなので開発ツール表示中だけ出す（実運用フローでは出さない）。
+          events={
+            showDevTools
+              ? state.events.filter(
+                  (e) => e.kind === "Matchmaking" || e.kind === "Welcome",
+                )
+              : undefined
+          }
           selfDisplayName={selfDisplayName}
           onLeave={() => {
             net.leave();
