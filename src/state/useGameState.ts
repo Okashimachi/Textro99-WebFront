@@ -1,6 +1,6 @@
 // 受信ディスパッチ層(#4)と reducer(#5) を接続する React フック。
 // すべての S2C type を購読し、reducer に畳み込む。直近 Envelope も保持（#6 デバッグ用）。
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { MessageType, type Envelope } from "@/proto/types";
 import type { WsConnection } from "@/net";
 import { gameReducer } from "./reducer";
@@ -27,6 +27,8 @@ export interface UseGameState {
   state: GameViewModel;
   /** デバッグ表示用の直近受信 Envelope。 */
   lastEnvelope: Envelope | null;
+  /** 受信 state を初期化する。セッションを張り直すとき（離脱・入り直し）に呼ぶ。 */
+  reset: () => void;
 }
 
 export function useGameState(connection: WsConnection): UseGameState {
@@ -46,5 +48,10 @@ export function useGameState(connection: WsConnection): UseGameState {
     return () => offs.forEach((off) => off());
   }, [connection]);
 
-  return { state, lastEnvelope };
+  const reset = useCallback(() => {
+    dispatchRef.current({ type: "@reset" });
+    setLastEnvelope(null);
+  }, []);
+
+  return { state, lastEnvelope, reset };
 }
