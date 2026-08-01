@@ -1,6 +1,6 @@
 # src/proto — vendored proto 型
 
-[Textro99-Proto](https://github.com/Okashimachi/Textro99-Proto) の TypeScript 契約（`ts/types.ts`）を**手コピー（vendoring）**で取り込んだもの。当面 npm レジストリは使わない（判断の経緯: [docs/worklog/log-001-proto-vendoring](../../docs/worklog/log-001-proto-vendoring/README.md)）。
+[Textro99-Proto](https://github.com/Okashimachi/Textro99-Proto) の TypeScript 契約（`ts/types.ts`）を**手コピー（vendoring）**で取り込んだもの。当面 npm レジストリは使わない。
 
 ## 現在の版
 
@@ -26,7 +26,7 @@
 2. Proto の `ts/types.ts` で `src/proto/types.ts` を**丸ごと置き換える**（部分編集しない）。先頭の vendor ヘッダの版・コミット・取得日を更新する。
 3. 上表「現在の版」を更新する。
 4. 型変更に追随して web 実装の壊れた箇所を直す。
-5. 破壊的変更なら [docs/worklog](../../docs/worklog/README.md) に同期タスクを起票し、PR のレビュー観点（[docs/rules/04](../../docs/rules/04-PRとレビュー.md)）で契約差分を確認する。
+5. 破壊的変更なら、PR のレビュー観点（[docs/rules/04](../../docs/rules/04-PRとレビュー.md)）で契約差分を確認する。
 
 ## 未取り込み（今後）
 
