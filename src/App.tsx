@@ -68,7 +68,7 @@ export function App() {
   const showDevTools = devToolsAvailable && showDevToolsPref;
 
   const { profile, setDisplayName } = useProfile();
-  const { state, lastEnvelope } = useGameState(connection);
+  const { state, lastEnvelope, reset: resetGameState } = useGameState(connection);
   const { phase, inputActive, actions, matchResult } =
     useScreenPhase(state);
   const [step, setStep] = useState(0);
@@ -105,6 +105,19 @@ export function App() {
     joinArmedRef.current = false;
     connection.setAutoReconnect(false);
   }, [matchResult, connection]);
+
+  // タブを閉じる/リロードするときも待機列から抜ける。
+  // 接続の close だけに任せると、サーバーが close を検知するまでの間、待機列に自分が残る。
+  // pagehide は bfcache 退避でも発火するため、送るのは開いている時だけにする。
+  useEffect(() => {
+    const onPageHide = () => {
+      if (connection.status === "open") {
+        connection.send(MessageType.MatchmakingLeave, {});
+      }
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, [connection]);
 
   // 接続/モックは in-game の間だけ動かす。title/mode/name では接続しない。
   useEffect(() => {
@@ -184,14 +197,36 @@ export function App() {
     setSessionEndDeadlineMs((prev) => prev ?? Date.now() + SESSION_END_COUNTDOWN_MS);
   }, [matchResult, backend, stage, status]);
 
-  const exitToTitle = useCallback(() => {
-    // セッションを明示的に切ってから戻る（自動再接続も止まる）。
-    connection.disconnect();
+  // マッチングから抜ける共通処理。**待機列を離れる経路は必ずここを通す。**
+  //
+  // サーバーは接続時にのみマッチング登録する（1接続=1試合）。つまり待機列の在籍＝接続の
+  // 生存であり、接続を残したまま画面だけ戻ると待機列に自分が残る。その状態で入り直すと
+  // 新しい接続がもう1件登録され、同じ名前が2人以上並ぶ（報告されたバグ）。
+  //
+  // 順序に意味がある:
+  //   1. 参加意思を降ろす  … 以降 open しても MatchmakingJoin を送らない
+  //   2. 自動再接続を止める … 切った直後に再接続して再登録されるのを防ぐ
+  //   3. MatchmakingLeave  … 接続が開いている間に送る（サーバーが即座に待機列から外す）
+  //   4. 接続を切る        … 在籍の実体を消す。close が遅れても 3 で先に外れている
+  const leaveRoom = useCallback(() => {
     joinArmedRef.current = false;
+    connection.setAutoReconnect(false);
+    // 閉じた接続への送信は警告になるだけなので、開いている時だけ送る。
+    if (connection.status === "open") {
+      connection.send(MessageType.MatchmakingLeave, {});
+    }
+    connection.disconnect();
+    // 前のセッションの待機者一覧・盤面を残さない（入り直した直後に古い一覧が出る）。
+    resetGameState();
+  }, [connection, resetGameState]);
+
+  const exitToTitle = useCallback(() => {
+    // セッションを明示的に切ってから戻る（待機列にも残さない）。
+    leaveRoom();
     setSessionEndDeadlineMs(null);
     actions.backToTitle();
     setStage("title");
-  }, [actions, connection]);
+  }, [actions, leaveRoom]);
 
   // ScreenRouter に渡す合成 actions（stage 遷移を織り込む）。
   const routerActions: ScreenActions = useMemo(
@@ -202,8 +237,8 @@ export function App() {
         actions.seekMatch();
       },
       backToTitle: exitToTitle,
+      // 離脱の送信・切断は net.leave（＝leaveRoom）が済ませている。ここは画面の後始末だけ。
       leaveMatchmaking: () => {
-        joinArmedRef.current = false;
         actions.leaveMatchmaking();
         setStage("title");
       },
@@ -276,7 +311,9 @@ export function App() {
               : connection.send(MessageType.MatchmakingJoin, {
                   displayName: profile.displayName,
                 } satisfies MatchmakingJoin),
-          leave: () => connection.send(MessageType.MatchmakingLeave, {}),
+          // 離脱は「MatchmakingLeave を送って接続も切る」までを1つの操作として扱う
+          // （接続が残ると待機列に自分が残り、入り直しで二重登録になる）。
+          leave: leaveRoom,
         }}
         selectedStrategyId={selectedStrategyId}
         typedPrefix={typed}
