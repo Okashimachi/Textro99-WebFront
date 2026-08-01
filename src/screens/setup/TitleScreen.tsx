@@ -1,13 +1,14 @@
 // タイトル画面。ゲーム開始への入口だけを持つ（接続はまだしない）。
 //
-// 入口は2つ:
+// 入口:
 //   - プレイする  … 実運用フロー。名前入力 → クイックマッチ（サーバー）へ直行する。
-//   - テスト用    … 従来の開発用フロー。モード選択（オンライン/練習）を挟む。
+//   - テスト用    … 開発用フロー（モード選択）。**通常は非表示**。onTest が渡された
+//                   ときだけボタンを出す（App 側で URL の ?test=1 のときのみ渡す）。
 interface Props {
   /** 実運用フロー（名前入力 → クイックマッチ）へ進む。 */
   onPlay: () => void;
-  /** 開発用フロー（モード選択）へ進む。 */
-  onTest: () => void;
+  /** 開発用フロー（モード選択）へ進む。未指定ならテスト用ボタンを出さない。 */
+  onTest?: () => void;
 }
 
 export function TitleScreen({ onPlay, onTest }: Props) {
@@ -25,12 +26,14 @@ export function TitleScreen({ onPlay, onTest }: Props) {
         >
           プレイする
         </button>
-        <button
-          onClick={onTest}
-          className="border border-zinc-300 bg-white px-10 py-2.5 text-sm text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
-        >
-          テスト用
-        </button>
+        {onTest && (
+          <button
+            onClick={onTest}
+            className="border border-zinc-300 bg-white px-10 py-2.5 text-sm text-zinc-500 hover:border-zinc-400 hover:text-zinc-900"
+          >
+            テスト用
+          </button>
+        )}
       </div>
     </div>
   );
