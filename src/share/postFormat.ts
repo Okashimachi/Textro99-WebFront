@@ -10,7 +10,7 @@
 import type { GameOver } from "@/proto/types";
 
 /** ハッシュタグ。複数付けたい場合は半角スペース区切りで並べる。 */
-export const HASHTAG = "#テキストロ99";
+export const HASHTAG = "#テキストロ99 #demo_stage_summer";
 
 /** ゲーム表示名。テーマ変更時はここだけ差し替える（コード上の名称は変えない）。 */
 export const GAME_LABEL = "テキストロ99";
