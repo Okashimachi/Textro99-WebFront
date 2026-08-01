@@ -4,6 +4,7 @@
 // 試合が完全に終わった後にタイトルへ戻るかどうかはプレイヤーの操作に委ねる
 // （自動遷移や猶予時間は設けない。タイトルへ戻る操作は下のボタンのみ）。
 import { openXIntent, type ShareText } from "@/share";
+import { DOCS_URL } from "@/links";
 
 interface Props {
   /** X 共有の内容（現状はモック生成。将来はサーバー配信）。 */
@@ -61,9 +62,6 @@ export function ResultActions({
     </section>
   );
 }
-
-/** 技術説明サイトの URL。決定次第ここを書き換える。 */
-const DOCS_URL = "https://example.com/textro99-docs";
 
 /** X のロゴ。 */
 function XLogo() {

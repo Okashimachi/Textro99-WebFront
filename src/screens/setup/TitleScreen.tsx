@@ -4,6 +4,8 @@
 //   - プレイする  … 実運用フロー。名前入力 → クイックマッチ（サーバー）へ直行する。
 //   - テスト用    … 開発用フロー（モード選択）。**通常は非表示**。onTest が渡された
 //                   ときだけボタンを出す（App 側で URL の ?test=1 のときのみ渡す）。
+import { DOCS_URL } from "@/links";
+
 interface Props {
   /** 実運用フロー（名前入力 → クイックマッチ）へ進む。 */
   onPlay: () => void;
@@ -28,6 +30,14 @@ export function TitleScreen({ onPlay, onTest }: Props) {
         >
           プレイする
         </button>
+        <a
+          href={DOCS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border border-zinc-200 bg-transparent px-6 py-1.5 text-center text-xs text-zinc-400 hover:border-zinc-300 hover:text-zinc-600"
+        >
+          説明ページ
+        </a>
         {onTest && (
           <button
             onClick={onTest}
