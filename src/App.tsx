@@ -45,6 +45,14 @@ type Backend = "server" | "mock";
 /** 入口。play=実運用フロー（開発ツール無し）、test=開発用フロー。 */
 type Entry = "play" | "test";
 
+/**
+ * テストモード（テスト用入口＝モード選択・練習・開発ツール）を出すか。
+ * 実装は残したまま通常は非表示にし、URL に `?test=1` を付けたときだけ入口を出す。
+ */
+const testEntryEnabled =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("test") === "1";
+
 export function App() {
   const connection = useMemo(() => new WsConnection({ autoReconnect: true }), []);
   const [stage, setStage] = useState<Stage>("title");
@@ -138,6 +146,8 @@ export function App() {
     connection,
     active: inputActive,
     onCharKey: registerChar,
+    // 数字を含むお題の間だけ 0-9 を打鍵に回す（それ以外は StrategySelect のまま）。
+    digitsAsDaken: /[0-9]/.test(state.activeDaken[0]?.text ?? ""),
   });
 
   useEffect(() => {
@@ -217,10 +227,15 @@ export function App() {
           setEntry("play");
           setStage("name");
         }}
-        onTest={() => {
-          setEntry("test");
-          setStage("mode");
-        }}
+        // テストモードは通常非表示。URL に ?test=1 を付けたときだけ入口を出す。
+        onTest={
+          testEntryEnabled
+            ? () => {
+                setEntry("test");
+                setStage("mode");
+              }
+            : undefined
+        }
       />
     );
   } else if (stage === "mode") {

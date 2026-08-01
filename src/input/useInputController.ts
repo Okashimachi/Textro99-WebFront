@@ -22,6 +22,14 @@ export interface InputControllerOptions {
   active: boolean;
   /** 文字キー（打鍵）の受け渡し先。#8 TypingJudge が実装するまでは呼び出しのみ。 */
   onCharKey?: (char: string) => void;
+  /**
+   * 0-9 を打鍵として扱うか。**現在のお題に半角数字が含まれる間だけ true** にする。
+   *
+   * 0-9 は本来 StrategySelect 専用（docs/rules/01 §7）だが、それだと数字を含むお題が
+   * 打てない。お題に数字がある時だけ打鍵へ回し、それ以外は従来どおり作戦選択に使う。
+   * 判定は呼び出し側（お題を知っている側）が行い、この層は渡された通りに振り分ける。
+   */
+  digitsAsDaken?: boolean;
 }
 
 export interface InputController {
@@ -34,15 +42,21 @@ function isSingleChar(key: string): boolean {
   return key.length === 1;
 }
 
-/** 打鍵対象の文字か（ローマ字入力想定。英字を基本とする）。 */
+/**
+ * 打鍵対象の文字か（ローマ字入力想定）。
+ *
+ * 英字に加えて `-`（伸ばし棒 ー の受理綴り）を含める。`ー` は romaji.ts で `-` に対応
+ * づけているのに、ここで弾いていたため打てなかった。
+ * 数字は原則 StrategySelect 側で消費するため、ここには含めない（→ digitsAsDaken）。
+ */
 function isDakenChar(key: string): boolean {
-  return /^[a-zA-Z]$/.test(key);
+  return /^[a-zA-Z-]$/.test(key);
 }
 
 export function useInputController(
   options: InputControllerOptions,
 ): InputController {
-  const { connection, active, onCharKey } = options;
+  const { connection, active, onCharKey, digitsAsDaken = false } = options;
   const [selectedStrategyId, setSelectedStrategyId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -51,6 +65,13 @@ export function useInputController(
     const handler = (e: KeyboardEvent) => {
       // 修飾キー付き（ショートカット）は無視。IME 変換中も無視。
       if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+
+      // 数字を含むお題を打っている間は、0-9 を打鍵として扱う（作戦選択より優先）。
+      if (digitsAsDaken && isSingleChar(e.key) && /^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        onCharKey?.(e.key);
+        return;
+      }
 
       // 0-9 → StrategySelect
       if (isSingleChar(e.key) && /^[0-9]$/.test(e.key)) {
@@ -74,7 +95,7 @@ export function useInputController(
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [connection, active, onCharKey]);
+  }, [connection, active, onCharKey, digitsAsDaken]);
 
   return { selectedStrategyId };
 }
