@@ -6,9 +6,12 @@
 // 0 到達で onSessionEnd を1回だけ呼ぶ。
 import { useEffect, useRef } from "react";
 import { useNow } from "@/components/hud/useNow";
+import { openXIntent, type ShareText } from "@/share";
 import { SESSION_END_COUNTDOWN_MS } from "./sessionEnd";
 
 interface Props {
+  /** X 共有の内容（現状はモック生成。将来はサーバー配信）。 */
+  share: ShareText;
   /** セッション終了時刻(ms epoch)。試合が完全に終わるまでは null。 */
   sessionEndDeadlineMs: number | null;
   onRematch: () => void;
@@ -19,6 +22,7 @@ interface Props {
 }
 
 export function ResultActions({
+  share,
   sessionEndDeadlineMs,
   onRematch,
   onBackToTitle,
@@ -77,6 +81,28 @@ export function ResultActions({
           タイトルへ
         </button>
       </div>
+
+      {/* 共有は主導線（再マッチング/タイトルへ）より弱く、右下に小さく置く。
+          押すと X の投稿画面が別タブで開くだけで、投稿の確定はユーザーが行う。 */}
+      <div className="mt-2 flex justify-end">
+        <button
+          onClick={() => openXIntent(share)}
+          title={share.text}
+          className="flex items-center gap-2 border border-zinc-600 bg-black px-3 py-2 text-sm font-bold text-white transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <XLogo />
+          結果をポスト
+        </button>
+      </div>
     </section>
+  );
+}
+
+/** X のロゴ。 */
+function XLogo() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-current">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
   );
 }

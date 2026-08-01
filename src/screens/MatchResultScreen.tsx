@@ -13,6 +13,7 @@ import type { GameOver } from "@/proto/types";
 import type { GameViewModel } from "@/state";
 import { LiveRanking } from "@/components/hud/LiveRanking";
 import { PlayerGrid99 } from "@/components/PlayerGrid99";
+import { buildShareTextMock } from "@/share";
 import { ResultBoard } from "./ResultBoard";
 import { ResultActions } from "./ResultActions";
 
@@ -146,6 +147,8 @@ export function MatchResultScreen({
             className="min-h-0 flex-1 overflow-y-auto"
           />
           <ResultActions
+            // TODO(server): 共有テキストがサーバー配信になったら受信値をそのまま渡す。
+            share={buildShareTextMock(result)}
             sessionEndDeadlineMs={sessionEndDeadlineMs}
             onRematch={onRematch}
             onBackToTitle={onBackToTitle}
