@@ -94,6 +94,7 @@ export function gameReducer(
         activeDaken: [p.initialDaken],
         gameOver: null,
         defeatedBy: null,
+        defeatedPlayers: [],
         matchmaking: null,
         // 試合ごとの値は MatchStart で初期化する。前の試合の値が残っていると、
         // 新しい試合の開始直後に前試合の被弾スタック（＝危険警告）やコンボが見えてしまう。
@@ -197,7 +198,20 @@ export function gameReducer(
         p.victimId === state.selfPlayerId
           ? { attackerId: p.attackerId, badgesTransferred: p.badgesTransferred }
           : state.defeatedBy;
-      return { ...state, defeatedBy, ...pushEvent(state, "Ko", msg, receivedAtMs) };
+      // 「自分が倒した相手」も同様に写し取る（リザルトで内訳を出すため。数え直しはしない）。
+      const defeatedPlayers =
+        p.attackerId !== null && p.attackerId === state.selfPlayerId
+          ? [
+              ...state.defeatedPlayers,
+              { victimId: p.victimId, badgesTransferred: p.badgesTransferred },
+            ]
+          : state.defeatedPlayers;
+      return {
+        ...state,
+        defeatedBy,
+        defeatedPlayers,
+        ...pushEvent(state, "Ko", msg, receivedAtMs),
+      };
     }
 
     case MessageType.PlayerListUpdated: {
