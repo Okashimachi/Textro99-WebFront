@@ -36,10 +36,8 @@ interface Props {
   inMatchDevTools?: React.ReactNode;
   /** 自分の試合結果。非 null の間、観戦画面の上にリザルトモーダルを重ねる。 */
   matchResult?: GameOver | null;
-  /** セッション終了時刻(ms epoch)。試合が完全に終わったときだけ非 null。 */
-  sessionEndDeadlineMs?: number | null;
-  /** カウントダウン 0 到達。セッションを切ってタイトルへ戻す。 */
-  onSessionEnd?: () => void;
+  /** 試合が完全に終わったか（サーバーが接続を切ったこと）。タイトルへ戻るのはプレイヤー操作のみ。 */
+  matchEnded?: boolean;
 }
 
 export function ScreenRouter({
@@ -55,8 +53,7 @@ export function ScreenRouter({
   onToggleDevTools,
   inMatchDevTools,
   matchResult = null,
-  sessionEndDeadlineMs = null,
-  onSessionEnd,
+  matchEnded = false,
 }: Props) {
   switch (phase) {
     case "title":
@@ -118,13 +115,12 @@ export function ScreenRouter({
             state={state}
             result={matchResult}
             selfDisplayName={selfDisplayName}
-            sessionEndDeadlineMs={sessionEndDeadlineMs}
+            matchEnded={matchEnded}
             onRematch={() => {
               actions.rematch();
               net.join();
             }}
             onBackToTitle={actions.backToTitle}
-            onSessionEnd={onSessionEnd ?? actions.backToTitle}
           />
         );
       }
