@@ -82,7 +82,7 @@ export function PlayerGrid99({
         {seated.map((p) => (
           <div
             key={p.playerId}
-            title={`${p.displayName} / バッジ${p.badgeCount} / ${p.alive ? "生存" : "脱落"}`}
+            title={`${p.displayName} / ${p.alive ? "生存" : "脱落"}`}
             className={`flex items-center justify-center border font-black leading-none ${
               large ? "text-xs" : "text-[10px]"
             } ${cellClass(p)} ${
@@ -90,7 +90,8 @@ export function PlayerGrid99({
               large && p.alive && stackRatioOf(p) >= 0.85 ? "animate-danger-pulse" : ""
             }`}
           >
-            {!p.alive ? "✕" : p.badgeCount > 0 ? p.badgeCount : ""}
+            {/* バッジ数は表示しない（概念を出さない方針）。脱落の ✕ だけ出す。 */}
+            {!p.alive ? "✕" : ""}
           </div>
         ))}
 

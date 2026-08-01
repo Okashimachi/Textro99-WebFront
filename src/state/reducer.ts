@@ -190,7 +190,8 @@ export function gameReducer(
       const msg =
         p.attackerId === null
           ? `${victim} が自滅`
-          : `${displayNameOf(state.players, p.attackerId)} が ${victim} を撃破（+${p.badgesTransferred}）`;
+          : // バッジ数は文言に出さない（概念を表示しない方針）。値は state に保持する。
+            `${displayNameOf(state.players, p.attackerId)} が ${victim} を撃破`;
       // alive フラグは PlayerListUpdated/Delta が正典。ここではイベント記録と、
       // 「自分を倒したのは誰か」の写し取りだけを行う（判定はしない）。
       // GameOver DTO に撃破者は入らないため、リザルトで出すにはここで保持しておく。

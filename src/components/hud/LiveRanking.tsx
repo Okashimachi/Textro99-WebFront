@@ -177,13 +177,7 @@ function Row({
           脱落
         </span>
       )}
-      <span
-        className={`shrink-0 font-bold ${
-          large ? (featured ? "text-base" : "text-sm") : "text-[11px]"
-        } ${r.isSelf ? "text-amber-300" : deadTone ? "text-zinc-500" : "text-amber-600"}`}
-      >
-        {r.player.badgeCount}
-      </span>
+      {/* バッジ数は表示しない（概念を出さない方針）。値は proto から受け取っている。 */}
     </li>
   );
 }

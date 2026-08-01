@@ -82,7 +82,7 @@ export function ResultBoard({
 
         {/* パラメータは枠を持たせず、ラベルと値の行として縦に並べる。 */}
         <dl className="min-h-0 flex-1 divide-y divide-zinc-200 border border-zinc-300 bg-white px-3">
-          <MiniStat label="最終バッジ" value={`${result.finalBadgeCount}`} />
+          {/* バッジは表示しない（概念を出さない方針）。値は proto から受け取っている。 */}
           <MiniStat label="最大コンボ" value={`${typingStats.maxCombo}`} />
           <MiniStat label="ダケンクリア" value={`${typingStats.totalDakenCleared}`} />
           <MiniStat label="ミス" value={`${typingStats.totalMiss}`} />
@@ -125,11 +125,6 @@ export function ResultBoard({
                 <span className="min-w-0 flex-1 truncate text-base font-black text-zinc-900">
                   {p.name}
                 </span>
-                {p.badges > 0 && (
-                  <span className="shrink-0 text-xs font-bold tabular-nums text-amber-600">
-                    +{p.badges}
-                  </span>
-                )}
               </li>
             ))
           )}

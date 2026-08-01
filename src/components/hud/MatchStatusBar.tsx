@@ -9,9 +9,6 @@ interface Props {
 }
 
 export function MatchStatusBar({ state }: Props) {
-  const self = state.players.find((p) => p.playerId === state.selfPlayerId);
-  const badges = self?.badgeCount ?? 0;
-
   return (
     <div className="flex flex-wrap gap-2">
       <BigStat
@@ -23,15 +20,9 @@ export function MatchStatusBar({ state }: Props) {
         text="text-emerald-600"
         labelBg="bg-emerald-500"
       />
-      <BigStat
-        label="撃破"
-        value={badges}
-        unit="バッジ"
-        ring="border-amber-500"
-        bg="bg-amber-50"
-        text="text-amber-600"
-        labelBg="bg-amber-500"
-      />
+      {/* 「撃破」は値がバッジ数だったため取り下げた（バッジの概念を表示しない方針）。
+          撃破数を出すなら、サーバー確定値（GameOver.koCount 相当）が試合中にも
+          届くようになってから復活させる。 */}
     </div>
   );
 }
