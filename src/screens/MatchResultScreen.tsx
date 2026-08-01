@@ -41,6 +41,18 @@ export function MatchResultScreen({
   // 試合がまだ続いているか（サーバーの生存数をそのまま見るだけ）。
   const matchOngoing = sessionEndDeadlineMs == null;
 
+  // 自分にトドメを刺した相手の表示名を players から引くだけ。
+  // 未受信＝undefined（出さない）／自滅＝null。優勝時は倒されていないので出さない。
+  const defeatedBy = isWin ? null : state.defeatedBy;
+  const defeatedByName =
+    defeatedBy == null
+      ? undefined
+      : defeatedBy.attackerId === null
+        ? null
+        : (state.players.find((p) => p.playerId === defeatedBy.attackerId)
+            ?.displayName ?? defeatedBy.attackerId);
+  const defeatedBadges = defeatedBy?.badgesTransferred ?? 0;
+
   return (
     // 高さは1画面ぶんに固定する（min-h だと 20 行のランキングで画面外まで伸びてしまう）。
     <div className="mx-auto flex h-[calc(100vh-2.75rem)] min-h-[560px] max-w-[1600px] flex-col gap-2 py-2">
@@ -74,21 +86,42 @@ export function MatchResultScreen({
       {/* 左: ランキング / 中: 敵の状況 / 右: リザルト。3つとも主役の大きさで並べる。 */}
       {/* 決着後はランキングを上位20人まで出すため、その幅を厚くし敵の盤面を絞る。 */}
       <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(260px,1fr)_minmax(220px,0.7fr)_minmax(380px,1.3fr)]">
-        {/* 左：ランキング（上位20人ぶんの高さを丸ごと使う） */}
-        <div className="order-2 min-h-0 lg:order-1">
+        {/* 左：誰に倒されたか ＋ ランキング（上位20人） */}
+        <div className="order-2 flex min-h-0 flex-col gap-2 lg:order-1">
+          {defeatedByName !== undefined && (
+            <div className="shrink-0 border-2 border-zinc-900 bg-zinc-900 px-3 py-2 text-white">
+              {defeatedByName === null ? (
+                <div className="text-xl font-black leading-tight text-zinc-300">
+                  自滅した
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-2">
+                  <span className="min-w-0 truncate text-2xl font-black leading-tight">
+                    {defeatedByName}
+                  </span>
+                  <span className="shrink-0 text-base font-black">に倒された</span>
+                  {defeatedBadges > 0 && (
+                    <span className="ml-auto shrink-0 text-xs font-bold tabular-nums text-amber-300">
+                      バッジ {defeatedBadges} を献上
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <LiveRanking
             players={state.players}
             selfPlayerId={state.selfPlayerId}
             selfDisplayName={selfDisplayName}
             size="large"
             limit={20}
-            className="h-full overflow-hidden"
+            className="min-h-0 flex-1 overflow-hidden"
           />
         </div>
 
         {/* 中：敵の状況（決着後も動き続ける）
             戦況ログはランキング20行ぶんの高さを確保するため、この画面では出さない
-            （誰にやられたかはリザルトの DEFEATED BY、脱落状況はランキングで分かる）。 */}
+            （誰にやられたかはランキング上のバナー、脱落状況はランキングで分かる）。 */}
         <div className="order-3 min-h-0 lg:order-2">
           <PlayerGrid99
             players={state.players}
@@ -102,19 +135,7 @@ export function MatchResultScreen({
         <div className="order-1 flex min-h-0 flex-col gap-2 lg:order-3">
           <ResultBoard
             result={result}
-            // 表示名の解決だけ（サーバーが送った attackerId を players から引く）。
-            // 未受信＝undefined（表示しない）／自滅＝null。
-            defeatedByName={
-              state.defeatedBy === null
-                ? undefined
-                : state.defeatedBy.attackerId === null
-                  ? null
-                  : (state.players.find(
-                      (p) => p.playerId === state.defeatedBy!.attackerId,
-                    )?.displayName ?? state.defeatedBy.attackerId)
-            }
-            defeatedBadges={state.defeatedBy?.badgesTransferred ?? 0}
-            // 倒した相手も表示名を引くだけ（順番・件数はサーバーの KoNotified のまま）。
+            // 倒した相手は表示名を引くだけ（順番・件数はサーバーの KoNotified のまま）。
             defeatedPlayers={state.defeatedPlayers.map((d) => ({
               name:
                 state.players.find((p) => p.playerId === d.victimId)?.displayName ??
