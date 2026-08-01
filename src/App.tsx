@@ -343,7 +343,15 @@ export function App() {
         </p>
       </header>
 
-      <main className="px-3">{body}</main>
+      <main
+        className={
+          stage === "title"
+            ? "flex min-h-[calc(100vh-2.375rem)] items-center justify-center px-3"
+            : "px-3"
+        }
+      >
+        {body}
+      </main>
 
       {/* dev: 送信ログ・S2C 注入・生 state（in-game かつ 開発ツール表示 ON のときのみ） */}
       {stage === "in-game" && showDevTools && (

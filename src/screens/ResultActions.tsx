@@ -39,7 +39,16 @@ export function ResultActions({
 
       {/* 共有は主導線（再マッチング/タイトルへ）より弱く、右下に小さく置く。
           押すと X の投稿画面が別タブで開くだけで、投稿の確定はユーザーが行う。 */}
-      <div className="mt-2 flex justify-end">
+      <div className="mt-2 flex items-center justify-end gap-2">
+        <a
+          href={DOCS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 border border-zinc-600 bg-black px-3 py-2 text-sm font-bold text-white transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <img src="/TEXTRO99-Icon-Sub.png" alt="" aria-hidden className="h-4 w-4" />
+          説明ページ
+        </a>
         <button
           onClick={() => openXIntent(share)}
           title={share.text}
@@ -52,6 +61,9 @@ export function ResultActions({
     </section>
   );
 }
+
+/** 技術説明サイトの URL。決定次第ここを書き換える。 */
+const DOCS_URL = "https://example.com/textro99-docs";
 
 /** X のロゴ。 */
 function XLogo() {
