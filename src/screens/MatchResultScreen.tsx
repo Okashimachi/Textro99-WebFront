@@ -13,7 +13,7 @@ import type { GameOver } from "@/proto/types";
 import type { GameViewModel } from "@/state";
 import { LiveRanking } from "@/components/hud/LiveRanking";
 import { PlayerGrid99 } from "@/components/PlayerGrid99";
-import { buildShareTextMock } from "@/share";
+import { buildShareText } from "@/share";
 import { ResultBoard } from "./ResultBoard";
 import { ResultActions } from "./ResultActions";
 
@@ -52,7 +52,6 @@ export function MatchResultScreen({
         ? null
         : (state.players.find((p) => p.playerId === defeatedBy.attackerId)
             ?.displayName ?? defeatedBy.attackerId);
-  const defeatedBadges = defeatedBy?.badgesTransferred ?? 0;
 
   return (
     // 高さは1画面ぶんに固定する（min-h だと 20 行のランキングで画面外まで伸びてしまう）。
@@ -126,11 +125,6 @@ export function MatchResultScreen({
                     {defeatedByName}
                   </span>
                   <span className="shrink-0 text-base font-black">に倒された</span>
-                  {defeatedBadges > 0 && (
-                    <span className="ml-auto shrink-0 text-xs font-bold tabular-nums text-amber-300">
-                      バッジ {defeatedBadges} を献上
-                    </span>
-                  )}
                 </div>
               )}
             </div>
@@ -147,8 +141,8 @@ export function MatchResultScreen({
             className="min-h-0 flex-1 overflow-y-auto"
           />
           <ResultActions
-            // TODO(server): 共有テキストがサーバー配信になったら受信値をそのまま渡す。
-            share={buildShareTextMock(result)}
+            // 文面はフロントでハードコード（文言の変更は src/share/postFormat.ts）。
+            share={buildShareText(result)}
             sessionEndDeadlineMs={sessionEndDeadlineMs}
             onRematch={onRematch}
             onBackToTitle={onBackToTitle}
