@@ -86,8 +86,33 @@ export function MatchResultScreen({
       {/* 左: ランキング / 中: 敵の状況 / 右: リザルト。3つとも主役の大きさで並べる。 */}
       {/* 決着後はランキングを上位20人まで出すため、その幅を厚くし敵の盤面を絞る。 */}
       <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(260px,1fr)_minmax(220px,0.7fr)_minmax(380px,1.3fr)]">
-        {/* 左：誰に倒されたか ＋ ランキング（上位20人） */}
-        <div className="order-2 flex min-h-0 flex-col gap-2 lg:order-1">
+        {/* 左：ランキング（上位20人） */}
+        <div className="order-2 min-h-0 lg:order-1">
+          <LiveRanking
+            players={state.players}
+            selfPlayerId={state.selfPlayerId}
+            selfDisplayName={selfDisplayName}
+            size="large"
+            limit={20}
+            className="h-full overflow-hidden"
+          />
+        </div>
+
+        {/* 中：敵の状況（決着後も動き続ける）
+            戦況ログはランキング20行ぶんの高さを確保するため、この画面では出さない
+            （誰にやられたかは戦績上のバナー、脱落状況はランキングで分かる）。 */}
+        <div className="order-3 min-h-0 lg:order-2">
+          <PlayerGrid99
+            players={state.players}
+            selfPlayerId={state.selfPlayerId}
+            size="large"
+            className="h-full overflow-hidden"
+          />
+        </div>
+
+        {/* 右：誰に倒されたか → 戦績（読むところ）→ 操作（押すところ）。
+            「◯◯に倒された」は自分の順位のすぐ上に置く。 */}
+        <div className="order-1 flex min-h-0 flex-col gap-2 lg:order-3">
           {defeatedByName !== undefined && (
             <div className="shrink-0 border-2 border-zinc-900 bg-zinc-900 px-3 py-2 text-white">
               {defeatedByName === null ? (
@@ -109,30 +134,6 @@ export function MatchResultScreen({
               )}
             </div>
           )}
-          <LiveRanking
-            players={state.players}
-            selfPlayerId={state.selfPlayerId}
-            selfDisplayName={selfDisplayName}
-            size="large"
-            limit={20}
-            className="min-h-0 flex-1 overflow-hidden"
-          />
-        </div>
-
-        {/* 中：敵の状況（決着後も動き続ける）
-            戦況ログはランキング20行ぶんの高さを確保するため、この画面では出さない
-            （誰にやられたかはランキング上のバナー、脱落状況はランキングで分かる）。 */}
-        <div className="order-3 min-h-0 lg:order-2">
-          <PlayerGrid99
-            players={state.players}
-            selfPlayerId={state.selfPlayerId}
-            size="large"
-            className="h-full overflow-hidden"
-          />
-        </div>
-
-        {/* 右：戦績（読むところ）＋操作（押すところ）。別ブロックにして役割を分ける。 */}
-        <div className="order-1 flex min-h-0 flex-col gap-2 lg:order-3">
           <ResultBoard
             result={result}
             // 倒した相手は表示名を引くだけ（順番・件数はサーバーの KoNotified のまま）。
