@@ -22,25 +22,23 @@ interface Props {
   result: GameOver;
   /** 自分の表示名（プロフィール名）。ランキングの自分の行に出す。 */
   selfDisplayName?: string;
-  /** セッション終了時刻(ms epoch)。試合が完全に終わったときだけ非 null。 */
-  sessionEndDeadlineMs: number | null;
+  /** 試合が完全に終わったか（サーバーが接続を切ったこと）。 */
+  matchEnded: boolean;
   onRematch: () => void;
   onBackToTitle: () => void;
-  onSessionEnd: () => void;
 }
 
 export function MatchResultScreen({
   state,
   result,
   selfDisplayName,
-  sessionEndDeadlineMs,
+  matchEnded,
   onRematch,
   onBackToTitle,
-  onSessionEnd,
 }: Props) {
   const isWin = result.rank === 1;
   // 試合がまだ続いているか（サーバーの生存数をそのまま見るだけ）。
-  const matchOngoing = sessionEndDeadlineMs == null;
+  const matchOngoing = !matchEnded;
 
   // 自分にトドメを刺した相手の表示名を players から引くだけ。
   // 未受信＝undefined（出さない）／自滅＝null。優勝時は倒されていないので出さない。
@@ -143,10 +141,8 @@ export function MatchResultScreen({
           <ResultActions
             // 文面はフロントでハードコード（文言の変更は src/share/postFormat.ts）。
             share={buildShareText(result)}
-            sessionEndDeadlineMs={sessionEndDeadlineMs}
             onRematch={onRematch}
             onBackToTitle={onBackToTitle}
-            onSessionEnd={onSessionEnd}
             className="shrink-0"
           />
         </div>

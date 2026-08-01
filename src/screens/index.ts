@@ -16,4 +16,3 @@ export { MatchmakingScreen } from "./MatchmakingScreen";
 export { MatchResultScreen } from "./MatchResultScreen";
 export { ResultBoard } from "./ResultBoard";
 export { ResultActions } from "./ResultActions";
-export { SESSION_END_COUNTDOWN_MS } from "./sessionEnd";
