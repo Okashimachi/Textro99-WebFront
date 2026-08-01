@@ -4,6 +4,7 @@
 // 試合が完全に終わった後にタイトルへ戻るかどうかはプレイヤーの操作に委ねる
 // （自動遷移や猶予時間は設けない。タイトルへ戻る操作は下のボタンのみ）。
 import { openXIntent, type ShareText } from "@/share";
+import { DOCS_URL } from "@/links";
 
 interface Props {
   /** X 共有の内容（現状はモック生成。将来はサーバー配信）。 */
@@ -39,7 +40,16 @@ export function ResultActions({
 
       {/* 共有は主導線（再マッチング/タイトルへ）より弱く、右下に小さく置く。
           押すと X の投稿画面が別タブで開くだけで、投稿の確定はユーザーが行う。 */}
-      <div className="mt-2 flex justify-end">
+      <div className="mt-2 flex items-center justify-end gap-2">
+        <a
+          href={DOCS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 border border-zinc-600 bg-black px-3 py-2 text-sm font-bold text-white transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <img src="/TEXTRO99-Icon-Sub.png" alt="" aria-hidden className="h-4 w-4" />
+          説明ページ
+        </a>
         <button
           onClick={() => openXIntent(share)}
           title={share.text}
