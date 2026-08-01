@@ -26,14 +26,33 @@ export const MOCK_SEQUENCE: { label: string; envelope: Envelope }[] = [
     label: "MatchmakingStatus (待機)",
     envelope: {
       type: MessageType.MatchmakingStatus,
-      payload: { waitingCount: 42, minPlayers: 20 },
+      payload: {
+        waitingCount: 3,
+        minPlayers: 20,
+        players: [
+          { displayName: "あなた" },
+          { displayName: "たろう" },
+          { displayName: "はなこ" },
+        ],
+      },
     },
   },
   {
     label: "MatchmakingStatus (カウントダウン)",
     envelope: {
       type: MessageType.MatchmakingStatus,
-      payload: { waitingCount: 99, minPlayers: 20, countdownMs: 5000 },
+      // countdownMs は受信時点の残り時間(ms)。画面側が受信時刻を起点に補間する。
+      payload: {
+        waitingCount: 4,
+        minPlayers: 20,
+        countdownMs: 15000,
+        players: [
+          { displayName: "あなた" },
+          { displayName: "たろう" },
+          { displayName: "はなこ" },
+          { displayName: "じろう" },
+        ],
+      },
     },
   },
   {
@@ -133,6 +152,26 @@ export const MOCK_SEQUENCE: { label: string; envelope: Envelope }[] = [
     envelope: {
       type: MessageType.KoNotified,
       payload: { attackerId: null, victimId: "p3", badgesTransferred: 0 },
+    },
+  },
+  {
+    // 自分（p1）が倒される KO。リザルトの「トドメを刺した相手」表示の検証用。
+    label: "KoNotified (自分が撃破される)",
+    envelope: {
+      type: MessageType.KoNotified,
+      payload: { attackerId: "p7", victimId: "p1", badgesTransferred: 3 },
+    },
+  },
+  {
+    label: "GameOver (脱落 42位)",
+    envelope: {
+      type: MessageType.GameOver,
+      payload: {
+        rank: 42,
+        koCount: 2,
+        finalBadgeCount: 3,
+        typingStats: { totalDakenCleared: 64, totalMiss: 11, maxCombo: 18, elapsedMs: 96000 },
+      },
     },
   },
   {

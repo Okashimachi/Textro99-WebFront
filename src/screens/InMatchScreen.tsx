@@ -36,7 +36,7 @@ interface Props {
   missCount?: number;
   /** 自分の表示名（プロフィール名）。ランキングの自分の行に出す。 */
   selfDisplayName?: string;
-  /** 観戦中（脱落済み）なら操作系をトーンダウンする。 */
+  /** 観戦中（脱落済み・GameOver 受信前）なら操作系をトーンダウンする。 */
   spectating?: boolean;
   /** ヘッダー右側に置く開発ツール（練習モードのみ・dev 専用）。 */
   devTools?: React.ReactNode;

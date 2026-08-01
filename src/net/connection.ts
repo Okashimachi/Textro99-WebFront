@@ -45,7 +45,8 @@ export interface WsConnectionOptions {
 export class WsConnection {
   private ws: WebSocket | null = null;
   private readonly url: string;
-  private readonly autoReconnect: boolean;
+  // 試合終了後は自動再接続を止める（＝勝手に次の試合へ登録されない）ため可変。
+  private autoReconnect: boolean;
   private readonly baseReconnectDelayMs: number;
   private readonly maxReconnectDelayMs: number;
 
@@ -129,6 +130,21 @@ export class WsConnection {
     this.reconnectAttempts = 0;
     this.setStatus("closed");
     this.connect();
+  }
+
+  /**
+   * 自動再接続の可否を切り替える。
+   *
+   * サーバーは接続時にのみマッチング登録する（1接続=1試合）。そのため試合終了後に
+   * 自動再接続すると、そのまま次の試合へ送り込まれてしまう。リザルト表示に入ったら
+   * false にして「切れたら切れたまま」にする（次の試合へ行くのはユーザーの明示操作のみ）。
+   */
+  setAutoReconnect(enabled: boolean): void {
+    this.autoReconnect = enabled;
+    if (!enabled && this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
   }
 
   /** 明示的に切断する（自動再接続はしない）。 */

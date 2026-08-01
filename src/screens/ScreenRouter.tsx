@@ -4,9 +4,10 @@
 import type { GameViewModel } from "@/state";
 import type { ScreenPhase } from "./lifecycle";
 import type { ScreenActions } from "./useScreenPhase";
+import type { GameOver } from "@/proto/types";
 import { InMatchScreen } from "./InMatchScreen";
 import { MatchmakingScreen } from "./MatchmakingScreen";
-import { ResultScreen } from "./ResultScreen";
+import { MatchResultScreen } from "./MatchResultScreen";
 
 /** 画面から発火するマッチング関連の送信。実体は App が connection.send で配線する。 */
 export interface MatchmakingNet {
@@ -31,10 +32,14 @@ interface Props {
   showDevTools?: boolean;
   /** 開発ツールの表示切替。 */
   onToggleDevTools?: (show: boolean) => void;
-  /** 開始カウントダウンの終了時刻(ms epoch)。マッチング完了直後のみ非 null。 */
-  startCountdownDeadlineMs?: number | null;
   /** 試合中ヘッダー右側の開発ツール（練習モードのみ）。 */
   inMatchDevTools?: React.ReactNode;
+  /** 自分の試合結果。非 null の間、観戦画面の上にリザルトモーダルを重ねる。 */
+  matchResult?: GameOver | null;
+  /** セッション終了時刻(ms epoch)。試合が完全に終わったときだけ非 null。 */
+  sessionEndDeadlineMs?: number | null;
+  /** カウントダウン 0 到達。セッションを切ってタイトルへ戻す。 */
+  onSessionEnd?: () => void;
 }
 
 export function ScreenRouter({
@@ -48,8 +53,10 @@ export function ScreenRouter({
   selfDisplayName,
   showDevTools,
   onToggleDevTools,
-  startCountdownDeadlineMs,
   inMatchDevTools,
+  matchResult = null,
+  sessionEndDeadlineMs = null,
+  onSessionEnd,
 }: Props) {
   switch (phase) {
     case "title":
@@ -71,17 +78,17 @@ export function ScreenRouter({
         <MatchmakingScreen
           status={state.matchmaking}
           statusReceivedAtMs={state.matchmakingReceivedAtMs}
-          // 待機中の進行はイベントログで伝える（残り秒数はサーバーが配信していないため）。
+          // 待機中の進行（参加/離脱・カウントダウン開始/中止）の履歴。
           events={state.events.filter(
             (e) => e.kind === "Matchmaking" || e.kind === "Welcome",
           )}
+          selfDisplayName={selfDisplayName}
           onLeave={() => {
             net.leave();
             actions.leaveMatchmaking();
           }}
           showDevTools={showDevTools}
           onToggleDevTools={onToggleDevTools}
-          startCountdownDeadlineMs={startCountdownDeadlineMs}
         />
       );
 
@@ -98,6 +105,24 @@ export function ScreenRouter({
       );
 
     case "spectating":
+      // 自分の結果が出ていれば決着レイアウト（ランキング・敵の状況＋リザルト）。
+      // まだ結果が来ていない脱落直後は、試合中レイアウトのまま観戦する。
+      if (matchResult) {
+        return (
+          <MatchResultScreen
+            state={state}
+            result={matchResult}
+            selfDisplayName={selfDisplayName}
+            sessionEndDeadlineMs={sessionEndDeadlineMs}
+            onRematch={() => {
+              actions.rematch();
+              net.join();
+            }}
+            onBackToTitle={actions.backToTitle}
+            onSessionEnd={onSessionEnd ?? actions.backToTitle}
+          />
+        );
+      }
       return (
         <InMatchScreen
           state={state}
@@ -106,19 +131,6 @@ export function ScreenRouter({
           missCount={missCount}
           selfDisplayName={selfDisplayName}
           spectating
-        />
-      );
-
-    case "result":
-      if (!state.gameOver) return <Placeholder title="リザルト">—</Placeholder>;
-      return (
-        <ResultScreen
-          result={state.gameOver}
-          onRematch={() => {
-            actions.rematch();
-            net.join();
-          }}
-          onBackToTitle={actions.backToTitle}
         />
       );
   }

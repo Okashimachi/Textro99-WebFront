@@ -6,9 +6,9 @@
 
 | 項目 | 値 |
 |---|---|
-| proto バージョン | **v0.1.1** |
-| 取得元コミット | `66e00fb` |
-| 取得日 | 2026-07-30 |
+| proto バージョン | **v0.1.1+**（v0.1.1 タグ以降の `textro-main`。次タグ未発行） |
+| 取得元コミット | `42fb05e`（`MatchmakingStatus` に `players` 追加・`countdownMs` を残り時間へ） |
+| 取得日 | 2026-08-01 |
 | 取り込みファイル | `types.ts`（`@okashimachi/textro99-proto` の `ts/types.ts` の写し） |
 
 ## 原則

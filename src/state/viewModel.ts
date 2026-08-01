@@ -43,6 +43,26 @@ export interface GameEvent {
   message: string;
 }
 
+/**
+ * 自分を脱落させた KO（KoNotified のうち victimId が自分のもの）。
+ * GameOver DTO には撃破者が入らないため、リザルトで出すにはこれを保持しておく必要がある。
+ * attackerId が null の脱落は自滅（KO実行者なし・契約どおり明示的な null）。
+ */
+export interface DefeatedBy {
+  attackerId: PlayerId | null;
+  badgesTransferred: number;
+}
+
+/**
+ * 自分が倒した相手（KoNotified のうち attackerId が自分のもの）を受信順に写したもの。
+ * GameOver DTO には koCount（数）しか入らないため、「誰を倒したか」を出すにはここで保持しておく。
+ * 数の正典はあくまでサーバーの koCount。これは表示用の内訳（クライアントで数え直さない）。
+ */
+export interface DefeatedPlayer {
+  victimId: PlayerId;
+  badgesTransferred: number;
+}
+
 export interface ComboState {
   value: number;
   lastDelta: number;
@@ -87,6 +107,10 @@ export interface GameViewModel {
   // MatchmakingStatus の受信時刻（カウントダウン残時間の表示基準・表示専用）
   matchmakingReceivedAtMs: number | null;
   gameOver: import("@/proto/types").GameOver | null;
+  /** 自分を脱落させた KO（サーバーの KoNotified を写すだけ）。未脱落なら null。 */
+  defeatedBy: DefeatedBy | null;
+  /** 自分が倒した相手（サーバーの KoNotified を受信順に写すだけ）。 */
+  defeatedPlayers: DefeatedPlayer[];
 
   // 直近イベント（新しいものが先頭）
   events: GameEvent[];
@@ -111,6 +135,8 @@ export function createInitialViewModel(): GameViewModel {
     matchmaking: null,
     matchmakingReceivedAtMs: null,
     gameOver: null,
+    defeatedBy: null,
+    defeatedPlayers: [],
     events: [],
     eventSeq: 0,
   };

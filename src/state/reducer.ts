@@ -93,6 +93,8 @@ export function gameReducer(
         aliveCount: p.players.filter((s) => s.alive).length,
         activeDaken: [p.initialDaken],
         gameOver: null,
+        defeatedBy: null,
+        defeatedPlayers: [],
         matchmaking: null,
         // 試合ごとの値は MatchStart で初期化する。前の試合の値が残っていると、
         // 新しい試合の開始直後に前試合の被弾スタック（＝危険警告）やコンボが見えてしまう。
@@ -189,8 +191,27 @@ export function gameReducer(
         p.attackerId === null
           ? `${victim} が自滅`
           : `${displayNameOf(state.players, p.attackerId)} が ${victim} を撃破（+${p.badgesTransferred}）`;
-      // alive フラグは PlayerListUpdated/Delta が正典。ここではイベント記録のみ。
-      return { ...state, ...pushEvent(state, "Ko", msg, receivedAtMs) };
+      // alive フラグは PlayerListUpdated/Delta が正典。ここではイベント記録と、
+      // 「自分を倒したのは誰か」の写し取りだけを行う（判定はしない）。
+      // GameOver DTO に撃破者は入らないため、リザルトで出すにはここで保持しておく。
+      const defeatedBy =
+        p.victimId === state.selfPlayerId
+          ? { attackerId: p.attackerId, badgesTransferred: p.badgesTransferred }
+          : state.defeatedBy;
+      // 「自分が倒した相手」も同様に写し取る（リザルトで内訳を出すため。数え直しはしない）。
+      const defeatedPlayers =
+        p.attackerId !== null && p.attackerId === state.selfPlayerId
+          ? [
+              ...state.defeatedPlayers,
+              { victimId: p.victimId, badgesTransferred: p.badgesTransferred },
+            ]
+          : state.defeatedPlayers;
+      return {
+        ...state,
+        defeatedBy,
+        defeatedPlayers,
+        ...pushEvent(state, "Ko", msg, receivedAtMs),
+      };
     }
 
     case MessageType.PlayerListUpdated: {
@@ -254,6 +275,17 @@ function matchmakingEventMessage(
     return `最低人数を下回りカウントダウン中止（待機 ${next.waitingCount} 人）`;
   }
 
+  // 誰が来た/抜けたかは players の差分で出す（同名が複数いる可能性があるため件数も併記）。
+  const joined = nameDiff(next.players, prev.players);
+  if (joined.length > 0) {
+    return `${joined.join(" / ")} が参加（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+  const left = nameDiff(prev.players, next.players);
+  if (left.length > 0) {
+    return `${left.join(" / ")} が離脱（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
+  }
+
+  // players 未配信のサーバー（旧版）へのフォールバック。人数の増減だけを出す。
   const diff = next.waitingCount - prev.waitingCount;
   if (diff > 0) {
     return `プレイヤーが参加 +${diff}（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
@@ -262,6 +294,25 @@ function matchmakingEventMessage(
     return `プレイヤーが離脱 ${diff}（待機 ${next.waitingCount} / 最少 ${next.minPlayers} 人）`;
   }
   return null;
+}
+
+/** a にあって b に無い表示名を返す（同名の重複ぶんも数える）。表示専用。 */
+function nameDiff(
+  a: MatchmakingStatus["players"],
+  b: MatchmakingStatus["players"],
+): string[] {
+  if (!a) return [];
+  const remain = new Map<string, number>();
+  for (const p of b ?? []) {
+    remain.set(p.displayName, (remain.get(p.displayName) ?? 0) + 1);
+  }
+  const out: string[] = [];
+  for (const p of a) {
+    const n = remain.get(p.displayName) ?? 0;
+    if (n > 0) remain.set(p.displayName, n - 1);
+    else out.push(p.displayName);
+  }
+  return out;
 }
 
 /** playerId から表示名を引く（未知IDは ID をそのまま出す）。表示専用。 */
